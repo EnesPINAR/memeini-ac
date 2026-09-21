@@ -15,6 +15,7 @@ import { ColorfulTitle } from '../components/ColorfulTitle';
 import { BottomNavBar, TabType } from '../components/BottomNavBar';
 import { StarRating } from '../components/StarRating';
 import { LiquidGlassView } from '../components/LiquidGlassView';
+import { ExpoUIButton } from '../components/ExpoUIButton';
 import { MemeItem } from '../types/meme';
 import { searchMemes } from '../data/mockMemes';
 
@@ -155,15 +156,11 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
         <View style={styles.actionRow}>
           <Text style={styles.questionText}>Bu değil mi?</Text>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
+          <ExpoUIButton
+            label="Sen ekle"
             onPress={() => onOpenAddMeme(query)}
-          >
-            <LiquidGlassView borderRadius={20} intensity={70} style={styles.senEkleLiquidBtn}>
-              <Ionicons name="add-circle" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />
-              <Text style={styles.senEkleText}>Sen ekle</Text>
-            </LiquidGlassView>
-          </TouchableOpacity>
+            iconName="add-circle"
+          />
         </View>
 
         {/* 2x2 Grid of Alternative Memes (Liquid Glass Cards) */}
