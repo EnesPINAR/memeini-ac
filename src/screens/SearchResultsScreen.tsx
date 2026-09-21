@@ -117,6 +117,28 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
           </View>
         </View>
 
+        {/* Meme ile ilişkilendirilen etiketler (Tıklanabilir) */}
+        {currentBest.tags && currentBest.tags.length > 0 && (
+          <View style={styles.memeTagsContainer}>
+            {currentBest.tags.map((tag) => (
+              <TouchableOpacity
+                key={tag}
+                activeOpacity={0.7}
+                style={styles.memeTagBadge}
+                onPress={() => {
+                  setQuery(tag);
+                  const results = searchMemes(tag);
+                  setSearchData(results);
+                  setCurrentBest(results.bestMatch);
+                  setAlternatives(results.alternatives);
+                }}
+              >
+                <Text style={styles.memeTagText}>#{tag}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* "Bu değil mi?" Heading + "Sen ekle (+)" Pill Button */}
         <View style={styles.actionRow}>
           <Text style={styles.questionText}>Bu değil mi?</Text>
@@ -244,7 +266,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     marginTop: 12,
-    marginBottom: 20,
+    marginBottom: 10,
     paddingHorizontal: 4,
   },
   uploaderBox: {
@@ -256,6 +278,28 @@ const styles = StyleSheet.create({
   },
   uploaderNickname: {
     fontSize: 14,
+    fontWeight: '800',
+    color: '#000000',
+  },
+  memeTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: '100%',
+    maxWidth: 380,
+    gap: 8,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  memeTagBadge: {
+    backgroundColor: '#F4F4F5',
+    borderWidth: 1.5,
+    borderColor: '#000000',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  memeTagText: {
+    fontSize: 13,
     fontWeight: '800',
     color: '#000000',
   },
