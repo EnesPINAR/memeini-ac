@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LiquidGlassView } from './LiquidGlassView';
 
 export type TabType = 'search' | 'add' | 'explore' | 'profile';
 
@@ -14,12 +15,16 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   onTabPress,
 }) => {
   const getIconColor = (tab: TabType) => {
-    return activeTab === tab ? '#007AFF' : '#8E8E93';
+    return activeTab === tab ? '#007AFF' : '#64748B';
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.iosTabBar}>
+      <LiquidGlassView
+        borderRadius={34}
+        intensity={70}
+        style={styles.liquidTabBar}
+      >
         {/* 1. Search */}
         <TouchableOpacity
           activeOpacity={0.7}
@@ -29,7 +34,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         >
           <Ionicons
             name={activeTab === 'search' ? 'search' : 'search-outline'}
-            size={26}
+            size={25}
             color={getIconColor('search')}
           />
           {activeTab === 'search' && <View style={styles.activeDot} />}
@@ -42,7 +47,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           style={styles.tabItem}
           accessibilityLabel="Meme Ekle"
         >
-          <View style={styles.addIconCircle}>
+          <View style={styles.addLiquidCircle}>
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </View>
         </TouchableOpacity>
@@ -56,7 +61,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         >
           <Ionicons
             name={activeTab === 'explore' ? 'compass' : 'compass-outline'}
-            size={27}
+            size={26}
             color={getIconColor('explore')}
           />
           {activeTab === 'explore' && <View style={styles.activeDot} />}
@@ -71,12 +76,12 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         >
           <Ionicons
             name={activeTab === 'profile' ? 'person-circle' : 'person-circle-outline'}
-            size={27}
+            size={26}
             color={getIconColor('profile')}
           />
           {activeTab === 'profile' && <View style={styles.activeDot} />}
         </TouchableOpacity>
-      </View>
+      </LiquidGlassView>
     </View>
   );
 };
@@ -89,32 +94,17 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     zIndex: 90,
   },
-  iosTabBar: {
+  liquidTabBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     width: '100%',
     maxWidth: 360,
-    height: 60,
-    backgroundColor: Platform.OS === 'web' ? 'rgba(255, 255, 255, 0.88)' : '#FFFFFF',
-    borderRadius: 32,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    height: 64,
     paddingHorizontal: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 8,
-    ...(Platform.OS === 'web'
-      ? ({
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        } as any)
-      : {}),
   },
   tabItem: {
     flex: 1,
@@ -123,18 +113,20 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'relative',
   },
-  addIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  addLiquidCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#007AFF',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   activeDot: {
     position: 'absolute',

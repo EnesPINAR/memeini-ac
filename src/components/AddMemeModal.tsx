@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LiquidGlassView } from './LiquidGlassView';
 import { MemeItem } from '../types/meme';
 
 interface AddMemeModalProps {
@@ -70,13 +71,17 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <View style={styles.sheetContainer}>
+        <LiquidGlassView
+          borderRadius={32}
+          intensity={85}
+          style={styles.sheetContainer}
+        >
           {/* iOS Grabber */}
           <View style={styles.grabberContainer}>
             <View style={styles.grabber} />
           </View>
 
-          {/* iOS Modal Header Bar */}
+          {/* Modal Header Bar */}
           <View style={styles.navBar}>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={styles.cancelText}>Vazgeç</Text>
@@ -90,14 +95,14 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.formContent}>
-            {/* Grouped Section */}
+            {/* Liquid Grouped Section */}
             <View style={styles.groupedSection}>
               <View style={styles.inputRow}>
                 <Text style={styles.fieldLabel}>Başlık</Text>
                 <TextInput
                   style={styles.fieldInput}
                   placeholder="Meme başlığı girin"
-                  placeholderTextColor="#8E8E93"
+                  placeholderTextColor="#64748B"
                   value={title}
                   onChangeText={setTitle}
                 />
@@ -110,7 +115,7 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
                 <TextInput
                   style={styles.fieldInput}
                   placeholder="Görsel linki (opsiyonel)"
-                  placeholderTextColor="#8E8E93"
+                  placeholderTextColor="#64748B"
                   value={imageUrl}
                   onChangeText={setImageUrl}
                   autoCapitalize="none"
@@ -124,7 +129,7 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
                 <TextInput
                   style={styles.fieldInput}
                   placeholder="#komik #kod #kedi"
-                  placeholderTextColor="#8E8E93"
+                  placeholderTextColor="#64748B"
                   value={tags}
                   onChangeText={setTags}
                 />
@@ -137,7 +142,7 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
                 <TextInput
                   style={styles.fieldInput}
                   placeholder="Kullanıcı adınız"
-                  placeholderTextColor="#8E8E93"
+                  placeholderTextColor="#64748B"
                   value={nickname}
                   onChangeText={setNickname}
                 />
@@ -148,7 +153,7 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
               Eklediğiniz meme ilgili etiketlerle anında arama sonuçlarında gösterilecektir.
             </Text>
           </ScrollView>
-        </View>
+        </LiquidGlassView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -157,31 +162,25 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: '#F2F2F7',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
     paddingTop: 8,
-    paddingBottom: 32,
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 20,
+    paddingBottom: 36,
+    maxHeight: '88%',
   },
   grabberContainer: {
     alignItems: 'center',
     paddingVertical: 6,
   },
   grabber: {
-    width: 36,
+    width: 38,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: '#C7C7CC',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
   },
   navBar: {
     flexDirection: 'row',
@@ -192,28 +191,29 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 17,
-    color: '#007AFF',
+    color: '#0284C7',
+    fontWeight: '500',
   },
   navTitle: {
     fontSize: 17,
-    fontWeight: '600',
-    color: '#000000',
+    fontWeight: '700',
+    color: '#0F172A',
   },
   doneText: {
     fontSize: 17,
-    fontWeight: '600',
-    color: '#007AFF',
+    fontWeight: '700',
+    color: '#0284C7',
   },
   formContent: {
     paddingHorizontal: 16,
     paddingTop: 10,
   },
   groupedSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#C6C6C8',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
   },
   inputRow: {
     flexDirection: 'row',
@@ -224,26 +224,26 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     width: 85,
-    fontSize: 16,
-    color: '#000000',
-    fontWeight: '500',
+    fontSize: 15,
+    color: '#0F172A',
+    fontWeight: '600',
   },
   fieldInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#000000',
+    fontSize: 15,
+    color: '#0F172A',
     padding: 0,
   },
   separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
+    height: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.06)',
     marginLeft: 16,
   },
   helperText: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: '#64748B',
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 12,
     lineHeight: 18,
   },
 });

@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ColorfulTitle } from '../components/ColorfulTitle';
 import { BottomNavBar, TabType } from '../components/BottomNavBar';
+import { LiquidGlassView } from '../components/LiquidGlassView';
 
 interface SearchHomeScreenProps {
   onSearch: (query: string) => void;
@@ -56,19 +57,23 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
             {/* Top Spacing to position under the rainbow */}
             <View style={styles.topSpace} />
 
-            {/* Apple iOS Typography Title */}
+            {/* Original Colorful Title "Meme'ini Bul" */}
             <View style={styles.titleContainer}>
-              <ColorfulTitle fontSize={36} />
+              <ColorfulTitle fontSize={38} />
             </View>
 
-            {/* iOS Cupertino Search Bar */}
+            {/* Liquid Glass Search Bar Capsule */}
             <View style={styles.searchBarContainer}>
-              <View style={styles.iosSearchBar}>
-                <Ionicons name="search" size={19} color="#8E8E93" style={styles.searchIcon} />
+              <LiquidGlassView
+                borderRadius={28}
+                intensity={65}
+                style={styles.liquidSearchBar}
+              >
+                <Ionicons name="search" size={20} color="#1E293B" style={styles.searchIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Meme veya etiket ara..."
-                  placeholderTextColor="#8E8E93"
+                  placeholderTextColor="#475569"
                   value={query}
                   onChangeText={setQuery}
                   returnKeyType="search"
@@ -78,28 +83,33 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
                 />
                 {query.length > 0 && Platform.OS !== 'ios' && (
                   <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-                    <Ionicons name="close-circle" size={18} color="#8E8E93" />
+                    <Ionicons name="close-circle" size={19} color="#475569" />
                   </TouchableOpacity>
                 )}
-              </View>
+              </LiquidGlassView>
             </View>
 
-            {/* iOS Style Frosted Tag Badges */}
+            {/* Liquid Glass Floating Tag Badges */}
             <View style={styles.tagsContainer}>
               {POPULAR_TAGS.map((tag) => (
                 <TouchableOpacity
                   key={tag}
-                  activeOpacity={0.7}
-                  style={styles.iosTagBadge}
+                  activeOpacity={0.75}
                   onPress={() => onSearch(tag)}
                 >
-                  <Text style={styles.tagText}>#{tag}</Text>
+                  <LiquidGlassView
+                    borderRadius={18}
+                    intensity={55}
+                    style={styles.liquidTagBadge}
+                  >
+                    <Text style={styles.tagText}>#{tag}</Text>
+                  </LiquidGlassView>
                 </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
 
-          {/* iOS Floating Tab Bar */}
+          {/* Liquid Glass Floating Tab Bar */}
           <BottomNavBar activeTab="search" onTabPress={onTabPress} />
         </SafeAreaView>
       </ImageBackground>
@@ -129,7 +139,7 @@ const styles = StyleSheet.create({
     height: 130,
   },
   titleContainer: {
-    marginBottom: 20,
+    marginBottom: 22,
     alignItems: 'center',
   },
   searchBarContainer: {
@@ -137,36 +147,22 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     marginBottom: 16,
   },
-  iosSearchBar: {
+  liquidSearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Platform.OS === 'web' ? 'rgba(255, 255, 255, 0.88)' : '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    paddingHorizontal: 14,
-    height: 50,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    elevation: 4,
-    ...(Platform.OS === 'web'
-      ? ({
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-        } as any)
-      : {}),
+    paddingHorizontal: 16,
+    height: 54,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '500',
-    color: '#000000',
+    fontWeight: '600',
+    color: '#0F172A',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    paddingVertical: 8,
   },
   clearButton: {
     padding: 4,
@@ -179,29 +175,14 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     marginTop: 6,
   },
-  iosTagBadge: {
-    backgroundColor: Platform.OS === 'web' ? 'rgba(255, 255, 255, 0.82)' : '#FFFFFF',
+  liquidTagBadge: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 18,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-    ...(Platform.OS === 'web'
-      ? ({
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-        } as any)
-      : {}),
   },
   tagText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#007AFF',
+    fontWeight: '700',
+    color: '#0284C7',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
 });

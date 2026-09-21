@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ColorfulTitle } from '../components/ColorfulTitle';
 import { BottomNavBar, TabType } from '../components/BottomNavBar';
 import { StarRating } from '../components/StarRating';
+import { LiquidGlassView } from '../components/LiquidGlassView';
 import { MemeItem } from '../types/meme';
 import { searchMemes } from '../data/mockMemes';
 
@@ -63,13 +64,13 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
       >
         {/* Top Colorful Title matching Figma positioning */}
         <TouchableOpacity activeOpacity={0.8} onPress={onBackToHome} style={styles.titleContainer}>
-          <ColorfulTitle fontSize={34} />
+          <ColorfulTitle fontSize={36} />
         </TouchableOpacity>
 
-        {/* Apple iOS Search Bar */}
+        {/* Liquid Glass Search Bar Row */}
         <View style={styles.searchBarRow}>
-          <View style={styles.iosSearchBar}>
-            <Ionicons name="search" size={18} color="#8E8E93" style={styles.searchIcon} />
+          <LiquidGlassView borderRadius={14} intensity={60} style={styles.liquidSearchBar}>
+            <Ionicons name="search" size={18} color="#475569" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               value={query}
@@ -77,23 +78,24 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
               returnKeyType="search"
               onSubmitEditing={handleSearchSubmit}
               placeholder="Meme veya etiket ara..."
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor="#64748B"
               clearButtonMode="while-editing"
             />
             {query.length > 0 && Platform.OS !== 'ios' && (
               <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
-                <Ionicons name="close-circle" size={16} color="#8E8E93" />
+                <Ionicons name="close-circle" size={17} color="#64748B" />
               </TouchableOpacity>
             )}
-          </View>
+          </LiquidGlassView>
+
           <TouchableOpacity onPress={onBackToHome} style={styles.cancelBtn}>
             <Text style={styles.cancelText}>Vazgeç</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Main Card: "Aranan En Uyumlu Meme" (Apple Card Style) */}
-        <View style={styles.mainCardContainer}>
-          <View style={styles.mainMemeCard}>
+        {/* Main Card: "Aranan En Uyumlu Meme" in Liquid Glass Frame */}
+        <View style={styles.mainCardWrapper}>
+          <LiquidGlassView borderRadius={24} intensity={70} style={styles.mainLiquidCard}>
             {currentBest.imageUrl ? (
               <Image
                 source={{ uri: currentBest.imageUrl }}
@@ -101,14 +103,17 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
                 resizeMode="cover"
               />
             ) : null}
-            {/* Elegant glassmorphic bottom caption banner */}
-            <View style={styles.mainMemeCaption}>
+
+            {/* Liquid Glass Bottom Caption Banner */}
+            <View style={styles.captionBanner}>
               <Text style={styles.mainMemeLabel} numberOfLines={1}>
                 {currentBest.title || 'Aranan En Uyumlu Meme'}
               </Text>
-              <Text style={styles.bestMatchTag}>En Uyumlu Eşleşme</Text>
+              <View style={styles.bestBadge}>
+                <Text style={styles.bestBadgeText}>En Uyumlu</Text>
+              </View>
             </View>
-          </View>
+          </LiquidGlassView>
         </View>
 
         {/* Card Footer: 5 Stars on Left, Uploader Nickname on Right */}
@@ -116,21 +121,20 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
           <StarRating initialRating={currentBest.rating} size={22} />
 
           <View style={styles.uploaderBox}>
-            <Ionicons name="person-circle" size={24} color="#007AFF" style={styles.avatarIcon} />
+            <Ionicons name="person-circle" size={24} color="#0284C7" style={styles.avatarIcon} />
             <Text style={styles.uploaderNickname}>
               @{currentBest.uploaderNickname || 'yukleyen'}
             </Text>
           </View>
         </View>
 
-        {/* Associated Meme Tags (iOS System Tinted Chips) */}
+        {/* Associated Meme Tags in Liquid Glass Chips */}
         {currentBest.tags && currentBest.tags.length > 0 && (
           <View style={styles.memeTagsContainer}>
             {currentBest.tags.map((tag) => (
               <TouchableOpacity
                 key={tag}
-                activeOpacity={0.7}
-                style={styles.iosTagBadge}
+                activeOpacity={0.75}
                 onPress={() => {
                   setQuery(tag);
                   const results = searchMemes(tag);
@@ -139,53 +143,58 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
                   setAlternatives(results.alternatives);
                 }}
               >
-                <Text style={styles.iosTagText}>#{tag}</Text>
+                <LiquidGlassView borderRadius={12} intensity={50} style={styles.liquidTagChip}>
+                  <Text style={styles.liquidTagText}>#{tag}</Text>
+                </LiquidGlassView>
               </TouchableOpacity>
             ))}
           </View>
         )}
 
-        {/* "Bu değil mi?" Heading + Apple Styled "Sen ekle (+)" Button */}
+        {/* "Bu değil mi?" Heading + Liquid Glass "Sen ekle (+)" Button */}
         <View style={styles.actionRow}>
           <Text style={styles.questionText}>Bu değil mi?</Text>
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={styles.senEkleBtn}
             onPress={() => onOpenAddMeme(query)}
           >
-            <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
-            <Text style={styles.senEkleText}>Sen ekle</Text>
+            <LiquidGlassView borderRadius={20} intensity={70} style={styles.senEkleLiquidBtn}>
+              <Ionicons name="add-circle" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.senEkleText}>Sen ekle</Text>
+            </LiquidGlassView>
           </TouchableOpacity>
         </View>
 
-        {/* 2x2 Grid of Alternative Memes (Apple Card Grid) */}
+        {/* 2x2 Grid of Alternative Memes (Liquid Glass Cards) */}
         <View style={styles.altGrid}>
           {alternatives.slice(0, 4).map((altMeme, index) => (
             <TouchableOpacity
               key={altMeme.id + '-' + index}
               activeOpacity={0.8}
-              style={styles.altCard}
+              style={styles.altCardWrapper}
               onPress={() => handleSelectAlternative(altMeme, index)}
             >
-              {altMeme.imageUrl ? (
-                <Image
-                  source={{ uri: altMeme.imageUrl }}
-                  style={styles.altCardImage}
-                  resizeMode="cover"
-                />
-              ) : null}
-              <View style={styles.altCardCaption}>
-                <Text style={styles.altCardText} numberOfLines={1}>
-                  {altMeme.title || 'Alternatif Meme'}
-                </Text>
-              </View>
+              <LiquidGlassView borderRadius={18} intensity={60} style={styles.altLiquidCard}>
+                {altMeme.imageUrl ? (
+                  <Image
+                    source={{ uri: altMeme.imageUrl }}
+                    style={styles.altCardImage}
+                    resizeMode="cover"
+                  />
+                ) : null}
+                <View style={styles.altCardCaption}>
+                  <Text style={styles.altCardText} numberOfLines={1}>
+                    {altMeme.title || 'Alternatif Meme'}
+                  </Text>
+                </View>
+              </LiquidGlassView>
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
 
-      {/* iOS Floating Tab Bar */}
+      {/* Liquid Glass Bottom Navigation Bar */}
       <BottomNavBar activeTab="search" onTabPress={onTabPress} />
     </SafeAreaView>
   );
@@ -194,7 +203,7 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F1F5F9',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -213,23 +222,21 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     marginBottom: 16,
   },
-  iosSearchBar: {
+  liquidSearchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E9E9EB',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    height: 40,
+    paddingHorizontal: 12,
+    height: 44,
   },
   searchIcon: {
-    marginRight: 6,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
     fontWeight: '500',
-    color: '#000000',
+    color: '#0F172A',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     padding: 0,
   },
@@ -242,68 +249,64 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
+    color: '#0284C7',
+    fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
-  mainCardContainer: {
+  mainCardWrapper: {
     width: '100%',
     maxWidth: 360,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 4,
+    marginBottom: 6,
   },
-  mainMemeCard: {
+  mainLiquidCard: {
     width: '100%',
     height: 220,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
     position: 'relative',
+    overflow: 'hidden',
   },
   mainMemeImage: {
     width: '100%',
     height: '100%',
   },
-  mainMemeCaption: {
+  captionBanner: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    backgroundColor: 'rgba(255, 255, 255, 0.78)',
     paddingVertical: 10,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderTopWidth: 0.5,
-    borderTopColor: 'rgba(0, 0, 0, 0.06)',
+    borderTopColor: 'rgba(255, 255, 255, 0.6)',
     ...(Platform.OS === 'web'
       ? ({
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
         } as any)
       : {}),
   },
   mainMemeLabel: {
     flex: 1,
     fontSize: 15,
-    fontWeight: '700',
-    color: '#000000',
+    fontWeight: '800',
+    color: '#0F172A',
     marginRight: 8,
   },
-  bestMatchTag: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#007AFF',
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+  bestBadge: {
+    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(2, 132, 199, 0.3)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
+  },
+  bestBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284C7',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -311,8 +314,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     maxWidth: 360,
-    marginTop: 10,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 10,
     paddingHorizontal: 4,
   },
   uploaderBox: {
@@ -325,7 +328,7 @@ const styles = StyleSheet.create({
   uploaderNickname: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#475569',
   },
   memeTagsContainer: {
     flexDirection: 'row',
@@ -336,16 +339,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 2,
   },
-  iosTagBadge: {
-    backgroundColor: 'rgba(0, 122, 255, 0.08)',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  liquidTagChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  iosTagText: {
+  liquidTagText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#007AFF',
+    fontWeight: '700',
+    color: '#0284C7',
   },
   actionRow: {
     flexDirection: 'row',
@@ -357,28 +358,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   questionText: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#000000',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     letterSpacing: -0.4,
   },
-  senEkleBtn: {
+  senEkleLiquidBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 18,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(2, 132, 199, 0.85)',
+    paddingVertical: 7,
     paddingHorizontal: 14,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
   },
   senEkleText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
@@ -390,20 +385,15 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     rowGap: 12,
   },
-  altCard: {
+  altCardWrapper: {
     width: '48%',
-    height: 115,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    height: 118,
+  },
+  altLiquidCard: {
+    width: '100%',
+    height: '100%',
     position: 'relative',
+    overflow: 'hidden',
   },
   altCardImage: {
     width: '100%',
@@ -414,22 +404,22 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderTopWidth: 0.5,
-    borderTopColor: 'rgba(0, 0, 0, 0.06)',
+    borderTopColor: 'rgba(255, 255, 255, 0.5)',
     ...(Platform.OS === 'web'
       ? ({
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
         } as any)
       : {}),
   },
   altCardText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#0F172A',
     textAlign: 'center',
   },
 });
