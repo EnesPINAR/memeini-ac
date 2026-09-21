@@ -8,6 +8,7 @@ import {
   Fredoka_700Bold,
 } from '@expo-google-fonts/fredoka';
 
+import { IOSContainer } from './src/components/IOSContainer';
 import { SearchHomeScreen } from './src/screens/SearchHomeScreen';
 import { SearchResultsScreen } from './src/screens/SearchResultsScreen';
 import { AddMemeModal } from './src/components/AddMemeModal';
@@ -61,36 +62,38 @@ export default function App() {
   if (!fontsLoaded) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#000000" />
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
 
   return (
     <SafeAreaProvider>
-      <View style={styles.container}>
-        {currentScreen === 'search_home' ? (
-          <SearchHomeScreen
-            onSearch={handleStartSearch}
-            onTabPress={handleTabPress}
-          />
-        ) : (
-          <SearchResultsScreen
-            initialQuery={searchQuery}
-            onBackToHome={() => setCurrentScreen('search_home')}
-            onOpenAddMeme={handleOpenAddMeme}
-            onTabPress={handleTabPress}
-          />
-        )}
+      <IOSContainer>
+        <View style={styles.container}>
+          {currentScreen === 'search_home' ? (
+            <SearchHomeScreen
+              onSearch={handleStartSearch}
+              onTabPress={handleTabPress}
+            />
+          ) : (
+            <SearchResultsScreen
+              initialQuery={searchQuery}
+              onBackToHome={() => setCurrentScreen('search_home')}
+              onOpenAddMeme={handleOpenAddMeme}
+              onTabPress={handleTabPress}
+            />
+          )}
 
-        {/* Add Meme Modal */}
-        <AddMemeModal
-          visible={addModalVisible}
-          onClose={() => setAddModalVisible(false)}
-          onAddMeme={handleAddNewMeme}
-          defaultTag={activeModalTag}
-        />
-      </View>
+          {/* Add Meme Modal */}
+          <AddMemeModal
+            visible={addModalVisible}
+            onClose={() => setAddModalVisible(false)}
+            onAddMeme={handleAddNewMeme}
+            defaultTag={activeModalTag}
+          />
+        </View>
+      </IOSContainer>
     </SafeAreaProvider>
   );
 }
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#86E0FE',
+    backgroundColor: '#0F172A',
     alignItems: 'center',
     justifyContent: 'center',
   },

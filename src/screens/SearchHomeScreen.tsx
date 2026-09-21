@@ -6,10 +6,10 @@ import {
   StyleSheet,
   ImageBackground,
   SafeAreaView,
-  StatusBar,
   Keyboard,
   ScrollView,
   Text,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ColorfulTitle } from '../components/ColorfulTitle';
@@ -35,11 +35,13 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
     }
   };
 
+  const handleClear = () => {
+    setQuery('');
+  };
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-
-      {/* Full screen background image matching Figma ara.png */}
+      {/* Background illustration matching Figma positioning */}
       <ImageBackground
         source={require('../../assets/images/rainbow_hamsters.png')}
         style={styles.backgroundImage}
@@ -49,45 +51,46 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             {/* Top Spacing to position under the rainbow */}
             <View style={styles.topSpace} />
 
-            {/* Colorful Title "Meme'ini Bul" */}
+            {/* Apple iOS Typography Title */}
             <View style={styles.titleContainer}>
-              <ColorfulTitle fontSize={40} />
+              <ColorfulTitle fontSize={36} />
             </View>
 
-            {/* Search Input Bar */}
+            {/* iOS Cupertino Search Bar */}
             <View style={styles.searchBarContainer}>
-              <View style={styles.searchBar}>
+              <View style={styles.iosSearchBar}>
+                <Ionicons name="search" size={19} color="#8E8E93" style={styles.searchIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Meme veya etiket ara..."
-                  placeholderTextColor="#777777"
+                  placeholderTextColor="#8E8E93"
                   value={query}
                   onChangeText={setQuery}
                   returnKeyType="search"
                   onSubmitEditing={handleSearchSubmit}
                   autoCorrect={false}
+                  clearButtonMode="while-editing"
                 />
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  style={styles.searchButton}
-                  onPress={handleSearchSubmit}
-                >
-                  <Ionicons name="search" size={28} color="#000000" />
-                </TouchableOpacity>
+                {query.length > 0 && Platform.OS !== 'ios' && (
+                  <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
+                    <Ionicons name="close-circle" size={18} color="#8E8E93" />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
 
-            {/* Popular tags badges */}
+            {/* iOS Style Frosted Tag Badges */}
             <View style={styles.tagsContainer}>
               {POPULAR_TAGS.map((tag) => (
                 <TouchableOpacity
                   key={tag}
-                  activeOpacity={0.75}
-                  style={styles.tagBadge}
+                  activeOpacity={0.7}
+                  style={styles.iosTagBadge}
                   onPress={() => onSearch(tag)}
                 >
                   <Text style={styles.tagText}>#{tag}</Text>
@@ -96,7 +99,7 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
             </View>
           </ScrollView>
 
-          {/* Bottom Floating Navigation Bar */}
+          {/* iOS Floating Tab Bar */}
           <BottomNavBar activeTab="search" onTabPress={onTabPress} />
         </SafeAreaView>
       </ImageBackground>
@@ -123,7 +126,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   topSpace: {
-    height: 140,
+    height: 130,
   },
   titleContainer: {
     marginBottom: 20,
@@ -131,54 +134,74 @@ const styles = StyleSheet.create({
   },
   searchBarContainer: {
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 360,
     marginBottom: 16,
   },
-  searchBar: {
+  iosSearchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#000000',
-    paddingHorizontal: 18,
-    height: 56,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
+    backgroundColor: Platform.OS === 'web' ? 'rgba(255, 255, 255, 0.88)' : '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    paddingHorizontal: 14,
+    height: 50,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4,
+    ...(Platform.OS === 'web'
+      ? ({
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+        } as any)
+      : {}),
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   input: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '500',
     color: '#000000',
-    paddingVertical: 8,
-    marginRight: 8,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
-  searchButton: {
-    padding: 6,
+  clearButton: {
+    padding: 4,
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 8,
-    maxWidth: 380,
-    marginTop: 4,
+    maxWidth: 360,
+    marginTop: 6,
   },
-  tagBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#000000',
+  iosTagBadge: {
+    backgroundColor: Platform.OS === 'web' ? 'rgba(255, 255, 255, 0.82)' : '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    ...(Platform.OS === 'web'
+      ? ({
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+        } as any)
+      : {}),
   },
   tagText: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#000000',
+    fontWeight: '600',
+    color: '#007AFF',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
 });

@@ -8,7 +8,7 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
-  StatusBar,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ColorfulTitle } from '../components/ColorfulTitle';
@@ -44,7 +44,6 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
     }
   };
 
-  // Swapping an alternative meme into the top position when clicked
   const handleSelectAlternative = (item: MemeItem, index: number) => {
     const oldBest = currentBest;
     setCurrentBest(item);
@@ -57,74 +56,81 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Top Colorful Title matching Figma ara 2.png */}
+        {/* Top Colorful Title matching Figma positioning */}
         <TouchableOpacity activeOpacity={0.8} onPress={onBackToHome} style={styles.titleContainer}>
-          <ColorfulTitle fontSize={38} />
+          <ColorfulTitle fontSize={34} />
         </TouchableOpacity>
 
-        {/* Search Bar matching Figma: Rounded pill with black border */}
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
-            value={query}
-            onChangeText={setQuery}
-            returnKeyType="search"
-            onSubmitEditing={handleSearchSubmit}
-            placeholder="Ornek arama"
-            placeholderTextColor="#000000"
-          />
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={handleSearchSubmit}
-            style={styles.searchIconBtn}
-          >
-            <Ionicons name="search" size={28} color="#000000" />
+        {/* Apple iOS Search Bar */}
+        <View style={styles.searchBarRow}>
+          <View style={styles.iosSearchBar}>
+            <Ionicons name="search" size={18} color="#8E8E93" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery}
+              returnKeyType="search"
+              onSubmitEditing={handleSearchSubmit}
+              placeholder="Meme veya etiket ara..."
+              placeholderTextColor="#8E8E93"
+              clearButtonMode="while-editing"
+            />
+            {query.length > 0 && Platform.OS !== 'ios' && (
+              <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
+                <Ionicons name="close-circle" size={16} color="#8E8E93" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity onPress={onBackToHome} style={styles.cancelBtn}>
+            <Text style={styles.cancelText}>Vazgeç</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Main Card: "Aranan En Uyumlu Meme" */}
-        <View style={styles.mainMemeCard}>
-          {currentBest.imageUrl ? (
-            <Image
-              source={{ uri: currentBest.imageUrl }}
-              style={styles.mainMemeImage}
-              resizeMode="cover"
-            />
-          ) : null}
-          <View style={styles.mainMemeOverlay}>
-            <Text style={styles.mainMemeLabel}>
-              {currentBest.title || 'Aranan En Uyumlu Meme'}
-            </Text>
+        {/* Main Card: "Aranan En Uyumlu Meme" (Apple Card Style) */}
+        <View style={styles.mainCardContainer}>
+          <View style={styles.mainMemeCard}>
+            {currentBest.imageUrl ? (
+              <Image
+                source={{ uri: currentBest.imageUrl }}
+                style={styles.mainMemeImage}
+                resizeMode="cover"
+              />
+            ) : null}
+            {/* Elegant glassmorphic bottom caption banner */}
+            <View style={styles.mainMemeCaption}>
+              <Text style={styles.mainMemeLabel} numberOfLines={1}>
+                {currentBest.title || 'Aranan En Uyumlu Meme'}
+              </Text>
+              <Text style={styles.bestMatchTag}>En Uyumlu Eşleşme</Text>
+            </View>
           </View>
         </View>
 
-        {/* Directly below main card: 5 Stars on Left, Uploader Nickname on Right */}
+        {/* Card Footer: 5 Stars on Left, Uploader Nickname on Right */}
         <View style={styles.cardFooter}>
-          <StarRating initialRating={currentBest.rating} />
+          <StarRating initialRating={currentBest.rating} size={22} />
 
           <View style={styles.uploaderBox}>
-            <Ionicons name="person-circle-outline" size={28} color="#000000" style={styles.avatarIcon} />
+            <Ionicons name="person-circle" size={24} color="#007AFF" style={styles.avatarIcon} />
             <Text style={styles.uploaderNickname}>
-              {currentBest.uploaderNickname || 'Yükleyen nickname'}
+              @{currentBest.uploaderNickname || 'yukleyen'}
             </Text>
           </View>
         </View>
 
-        {/* Meme ile ilişkilendirilen etiketler (Tıklanabilir) */}
+        {/* Associated Meme Tags (iOS System Tinted Chips) */}
         {currentBest.tags && currentBest.tags.length > 0 && (
           <View style={styles.memeTagsContainer}>
             {currentBest.tags.map((tag) => (
               <TouchableOpacity
                 key={tag}
                 activeOpacity={0.7}
-                style={styles.memeTagBadge}
+                style={styles.iosTagBadge}
                 onPress={() => {
                   setQuery(tag);
                   const results = searchMemes(tag);
@@ -133,27 +139,27 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
                   setAlternatives(results.alternatives);
                 }}
               >
-                <Text style={styles.memeTagText}>#{tag}</Text>
+                <Text style={styles.iosTagText}>#{tag}</Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
 
-        {/* "Bu değil mi?" Heading + "Sen ekle (+)" Pill Button */}
+        {/* "Bu değil mi?" Heading + Apple Styled "Sen ekle (+)" Button */}
         <View style={styles.actionRow}>
           <Text style={styles.questionText}>Bu değil mi?</Text>
 
           <TouchableOpacity
-            activeOpacity={0.75}
-            style={styles.senEkleButton}
+            activeOpacity={0.8}
+            style={styles.senEkleBtn}
             onPress={() => onOpenAddMeme(query)}
           >
+            <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
             <Text style={styles.senEkleText}>Sen ekle</Text>
-            <Ionicons name="add-circle-outline" size={26} color="#000000" style={styles.plusIcon} />
           </TouchableOpacity>
         </View>
 
-        {/* 2x2 Grid of Alternative Memes */}
+        {/* 2x2 Grid of Alternative Memes (Apple Card Grid) */}
         <View style={styles.altGrid}>
           {alternatives.slice(0, 4).map((altMeme, index) => (
             <TouchableOpacity
@@ -169,8 +175,8 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
                   resizeMode="cover"
                 />
               ) : null}
-              <View style={styles.altCardOverlay}>
-                <Text style={styles.altCardText} numberOfLines={2}>
+              <View style={styles.altCardCaption}>
+                <Text style={styles.altCardText} numberOfLines={1}>
                   {altMeme.title || 'Alternatif Meme'}
                 </Text>
               </View>
@@ -179,7 +185,7 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
         </View>
       </ScrollView>
 
-      {/* Floating Bottom Navigation Bar */}
+      {/* iOS Floating Tab Bar */}
       <BottomNavBar activeTab="search" onTabPress={onTabPress} />
     </SafeAreaView>
   );
@@ -188,85 +194,125 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F9FA',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 120,
     alignItems: 'center',
   },
   titleContainer: {
-    marginVertical: 12,
+    marginVertical: 10,
     alignItems: 'center',
   },
-  searchBar: {
+  searchBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 380,
-    height: 52,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#000000',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    marginBottom: 20,
+    maxWidth: 360,
+    marginBottom: 16,
+  },
+  iosSearchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E9E9EB',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    height: 40,
+  },
+  searchIcon: {
+    marginRight: 6,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '500',
     color: '#000000',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    padding: 0,
+  },
+  clearBtn: {
+    padding: 4,
+  },
+  cancelBtn: {
+    marginLeft: 10,
     paddingVertical: 6,
   },
-  searchIconBtn: {
-    padding: 4,
+  cancelText: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '500',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+  },
+  mainCardContainer: {
+    width: '100%',
+    maxWidth: 360,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 4,
   },
   mainMemeCard: {
     width: '100%',
-    maxWidth: 380,
     height: 220,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#000000',
+    borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#FAFAFA',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     position: 'relative',
   },
   mainMemeImage: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
   },
-  mainMemeOverlay: {
+  mainMemeCaption: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#000000',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.06)',
+    ...(Platform.OS === 'web'
+      ? ({
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+        } as any)
+      : {}),
   },
   mainMemeLabel: {
-    fontSize: 16,
-    fontWeight: '900',
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
     color: '#000000',
-    textAlign: 'center',
+    marginRight: 8,
+  },
+  bestMatchTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#007AFF',
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 380,
-    marginTop: 12,
-    marginBottom: 10,
+    maxWidth: 360,
+    marginTop: 10,
+    marginBottom: 8,
     paddingHorizontal: 4,
   },
   uploaderBox: {
@@ -274,109 +320,116 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarIcon: {
-    marginRight: 6,
+    marginRight: 4,
   },
   uploaderNickname: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#000000',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
   },
   memeTagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     width: '100%',
-    maxWidth: 380,
-    gap: 8,
+    maxWidth: 360,
+    gap: 6,
     marginBottom: 16,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
-  memeTagBadge: {
-    backgroundColor: '#F4F4F5',
-    borderWidth: 1.5,
-    borderColor: '#000000',
-    borderRadius: 14,
+  iosTagBadge: {
+    backgroundColor: 'rgba(0, 122, 255, 0.08)',
+    borderRadius: 12,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
   },
-  memeTagText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#000000',
+  iosTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#007AFF',
   },
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 380,
-    marginBottom: 16,
+    maxWidth: 360,
+    marginBottom: 12,
     paddingHorizontal: 4,
   },
   questionText: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 19,
+    fontWeight: '700',
     color: '#000000',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    letterSpacing: -0.4,
   },
-  senEkleButton: {
+  senEkleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#000000',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#007AFF',
+    borderRadius: 18,
     paddingVertical: 6,
     paddingHorizontal: 14,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   senEkleText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#000000',
-    marginRight: 6,
-  },
-  plusIcon: {
-    marginLeft: 2,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
   altGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     width: '100%',
-    maxWidth: 380,
-    rowGap: 16,
+    maxWidth: 360,
+    rowGap: 12,
   },
   altCard: {
-    width: '47.5%',
-    height: 110,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: '#000000',
+    width: '48%',
+    height: 115,
+    borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#FAFAFA',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
     position: 'relative',
   },
   altCardImage: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
   },
-  altCardOverlay: {
+  altCardCaption: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderTopWidth: 1,
-    borderTopColor: '#000000',
-    alignItems: 'center',
+    paddingHorizontal: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.06)',
+    ...(Platform.OS === 'web'
+      ? ({
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+        } as any)
+      : {}),
   },
   altCardText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#000000',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1E293B',
     textAlign: 'center',
   },
 });

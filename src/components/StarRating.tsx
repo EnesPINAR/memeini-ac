@@ -6,12 +6,14 @@ interface StarRatingProps {
   initialRating?: number;
   onRate?: (rating: number) => void;
   readOnly?: boolean;
+  size?: number;
 }
 
 export const StarRating: React.FC<StarRatingProps> = ({
   initialRating = 0,
   onRate,
   readOnly = false,
+  size = 20,
 }) => {
   const [rating, setRating] = useState(initialRating);
 
@@ -31,15 +33,15 @@ export const StarRating: React.FC<StarRatingProps> = ({
         return (
           <TouchableOpacity
             key={starIndex}
-            activeOpacity={0.7}
+            activeOpacity={0.65}
             disabled={readOnly}
             onPress={() => handlePress(starIndex)}
             style={styles.starTouch}
           >
             <Ionicons
-              name={isFilled ? 'star' : 'star-outline'}
-              size={26}
-              color={isFilled ? '#FFB800' : '#000000'}
+              name={isFilled ? 'star' : 'star'}
+              size={size}
+              color={isFilled ? '#FF9500' : '#E5E5EA'}
             />
           </TouchableOpacity>
         );
@@ -54,7 +56,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   starTouch: {
-    marginRight: 4,
+    marginRight: 2,
     padding: 2,
   },
 });
