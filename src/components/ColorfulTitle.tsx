@@ -1,45 +1,75 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
+import Svg, { Text as SvgText, TSpan } from 'react-native-svg';
 
 interface ColorfulTitleProps {
   fontSize?: number;
 }
 
-// Apple iOS System Palette colors matching the colorful name sequence
+// Letter definitions matching Figma exact colorful rainbow sequence
 const LETTERS = [
-  { char: 'M', color: '#34C759' }, // iOS System Green
-  { char: 'e', color: '#30D158' },
-  { char: 'm', color: '#007AFF' }, // iOS System Blue
-  { char: 'e', color: '#5AC8FA' }, // iOS System Teal
-  { char: "'", color: '#5856D6' }, // iOS System Indigo
-  { char: 'i', color: '#AF52DE' }, // iOS System Purple
-  { char: 'n', color: '#7857FF' },
-  { char: 'i', color: '#FF2D55' }, // iOS System Pink
+  { char: 'M', color: '#22C55E' },
+  { char: 'e', color: '#38D668' },
+  { char: 'm', color: '#2563EB' },
+  { char: 'e', color: '#0EA5E9' },
+  { char: "'", color: '#8B5CF6' },
+  { char: 'i', color: '#A855F7' },
+  { char: 'n', color: '#7C3AED' },
+  { char: 'i', color: '#D946EF' },
   { char: ' ', color: 'transparent' },
-  { char: 'B', color: '#AF52DE' },
-  { char: 'u', color: '#FF2D55' },
-  { char: 'l', color: '#FF3B30' }, // iOS System Red
+  { char: 'B', color: '#9333EA' },
+  { char: 'u', color: '#EC4899' },
+  { char: 'l', color: '#F43F5E' },
 ];
 
-export const ColorfulTitle: React.FC<ColorfulTitleProps> = ({ fontSize = 34 }) => {
+export const ColorfulTitle: React.FC<ColorfulTitleProps> = ({ fontSize = 38 }) => {
+  const svgWidth = fontSize * 7.5;
+  const svgHeight = fontSize * 1.5;
+
   return (
     <View style={styles.container}>
-      <View style={styles.row}>
-        {LETTERS.map((item, index) => (
-          <Text
-            key={index}
-            style={[
-              styles.letter,
-              {
-                fontSize,
-                color: item.color,
-              },
-            ]}
-          >
-            {item.char}
-          </Text>
-        ))}
-      </View>
+      <Svg
+        width={svgWidth}
+        height={svgHeight}
+        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+        style={styles.svg}
+      >
+        {/* Pass 1: Thick black stroke outline behind the letters */}
+        <SvgText
+          x="50%"
+          y="72%"
+          textAnchor="middle"
+          fontSize={fontSize}
+          fontWeight="900"
+          fontFamily={Platform.OS === 'ios' ? 'Arial Rounded MT Bold' : 'sans-serif-medium'}
+          stroke="#000000"
+          strokeWidth="6"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        >
+          {LETTERS.map((item, index) => (
+            <TSpan key={`stroke-${index}`} fill="#000000">
+              {item.char}
+            </TSpan>
+          ))}
+        </SvgText>
+
+        {/* Pass 2: Vibrant colorful fill on top */}
+        <SvgText
+          x="50%"
+          y="72%"
+          textAnchor="middle"
+          fontSize={fontSize}
+          fontWeight="900"
+          fontFamily={Platform.OS === 'ios' ? 'Arial Rounded MT Bold' : 'sans-serif-medium'}
+        >
+          {LETTERS.map((item, index) => (
+            <TSpan key={`fill-${index}`} fill={item.color}>
+              {item.char}
+            </TSpan>
+          ))}
+        </SvgText>
+      </Svg>
     </View>
   );
 };
@@ -49,17 +79,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  letter: {
-    fontWeight: '800',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
-    letterSpacing: -0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.12)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+  svg: {
+    overflow: 'visible',
   },
 });
