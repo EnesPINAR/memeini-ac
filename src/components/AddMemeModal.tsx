@@ -20,6 +20,7 @@ interface AddMemeModalProps {
   onClose: () => void;
   onAddMeme: (meme: MemeItem) => void;
   defaultTag?: string;
+  currentUserNickname?: string;
 }
 
 export const AddMemeModal: React.FC<AddMemeModalProps> = ({
@@ -27,11 +28,11 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
   onClose,
   onAddMeme,
   defaultTag = '',
+  currentUserNickname = 'enes',
 }) => {
   const [title, setTitle] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [tags, setTags] = useState(defaultTag ? `#${defaultTag}` : '');
-  const [nickname, setNickname] = useState('');
 
   const handleSubmit = () => {
     if (!title.trim()) {
@@ -51,7 +52,7 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
         imageUrl.trim() ||
         'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=600&auto=format&fit=crop&q=80',
       tags: cleanTags.length > 0 ? cleanTags : ['yeni', 'meme'],
-      uploaderNickname: nickname.trim() || 'anonim_meme',
+      uploaderNickname: currentUserNickname,
       rating: 5,
       ratingCount: 1,
       description: 'Kullanıcı tarafından eklendi.',
@@ -61,7 +62,6 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
     setTitle('');
     setImageUrl('');
     setTags('');
-    setNickname('');
     onClose();
   };
 
@@ -129,20 +129,6 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
                   placeholderTextColor="#888888"
                   value={tags}
                   onChangeText={setTags}
-                />
-              </View>
-            </View>
-
-            <Text style={styles.fieldLabel}>Kullanıcı Adın</Text>
-            <View style={styles.inputBoxWrapper}>
-              <View style={styles.inputShadow} pointerEvents="none" />
-              <View style={styles.inputSurface}>
-                <TextInput
-                  style={styles.fieldInput}
-                  placeholder="Örn: meme_lordu"
-                  placeholderTextColor="#888888"
-                  value={nickname}
-                  onChangeText={setNickname}
                 />
               </View>
             </View>
