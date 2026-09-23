@@ -92,51 +92,59 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
           >
             <Text style={styles.fieldLabel}>Meme Başlığı *</Text>
             <View style={styles.inputBoxWrapper}>
-              <View style={styles.inputShadow} />
-              <TextInput
-                style={styles.fieldInput}
-                placeholder="Örn: Pazartesi sabahı ben"
-                placeholderTextColor="#777777"
-                value={title}
-                onChangeText={setTitle}
-              />
+              <View style={styles.inputShadow} pointerEvents="none" />
+              <View style={styles.inputSurface}>
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="Örn: Pazartesi sabahı ben"
+                  placeholderTextColor="#888888"
+                  value={title}
+                  onChangeText={setTitle}
+                />
+              </View>
             </View>
 
             <Text style={styles.fieldLabel}>Görsel URL (Opsiyonel)</Text>
             <View style={styles.inputBoxWrapper}>
-              <View style={styles.inputShadow} />
-              <TextInput
-                style={styles.fieldInput}
-                placeholder="https://..."
-                placeholderTextColor="#777777"
-                value={imageUrl}
-                onChangeText={setImageUrl}
-                autoCapitalize="none"
-              />
+              <View style={styles.inputShadow} pointerEvents="none" />
+              <View style={styles.inputSurface}>
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="https://..."
+                  placeholderTextColor="#888888"
+                  value={imageUrl}
+                  onChangeText={setImageUrl}
+                  autoCapitalize="none"
+                />
+              </View>
             </View>
 
             <Text style={styles.fieldLabel}>Etiketler</Text>
             <View style={styles.inputBoxWrapper}>
-              <View style={styles.inputShadow} />
-              <TextInput
-                style={styles.fieldInput}
-                placeholder="#komik #kod #kedi"
-                placeholderTextColor="#777777"
-                value={tags}
-                onChangeText={setTags}
-              />
+              <View style={styles.inputShadow} pointerEvents="none" />
+              <View style={styles.inputSurface}>
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="#komik #kod #kedi"
+                  placeholderTextColor="#888888"
+                  value={tags}
+                  onChangeText={setTags}
+                />
+              </View>
             </View>
 
             <Text style={styles.fieldLabel}>Kullanıcı Adın</Text>
             <View style={styles.inputBoxWrapper}>
-              <View style={styles.inputShadow} />
-              <TextInput
-                style={styles.fieldInput}
-                placeholder="Örn: meme_lordu"
-                placeholderTextColor="#777777"
-                value={nickname}
-                onChangeText={setNickname}
-              />
+              <View style={styles.inputShadow} pointerEvents="none" />
+              <View style={styles.inputSurface}>
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="Örn: meme_lordu"
+                  placeholderTextColor="#888888"
+                  value={nickname}
+                  onChangeText={setNickname}
+                />
+              </View>
             </View>
 
             <View style={styles.submitRow}>
@@ -221,28 +229,36 @@ const styles = StyleSheet.create({
   },
   inputBoxWrapper: {
     position: 'relative',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   inputShadow: {
     position: 'absolute',
     top: 4,
     left: 4,
-    width: '100%',
-    height: '100%',
+    right: -4,
+    bottom: -4,
     borderRadius: 16,
     backgroundColor: '#000000',
+    zIndex: 1,
   },
-  fieldInput: {
-    fontFamily: 'Fredoka_600SemiBold',
+  inputSurface: {
+    position: 'relative',
+    zIndex: 2,
     backgroundColor: '#FFFFFF',
     borderWidth: 2.5,
     borderColor: '#000000',
     borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    height: 48,
+    justifyContent: 'center',
+  },
+  fieldInput: {
+    fontFamily: 'Fredoka_600SemiBold',
+    backgroundColor: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
     color: '#000000',
+    paddingVertical: 6,
   },
   submitRow: {
     marginTop: 24,
