@@ -41,7 +41,7 @@ export const ColorfulTitle: React.FC<ColorfulTitleProps> = ({ fontSize = 38 }) =
           textAnchor="middle"
           fontSize={fontSize}
           fontWeight="900"
-          fontFamily={Platform.OS === 'ios' ? 'Arial Rounded MT Bold' : 'sans-serif-medium'}
+          fontFamily={Platform.OS === 'web' ? 'Baloo 2, Fredoka, sans-serif' : 'Fredoka_700Bold'}
           stroke="#000000"
           strokeWidth="6"
           strokeLinejoin="round"
@@ -61,7 +61,7 @@ export const ColorfulTitle: React.FC<ColorfulTitleProps> = ({ fontSize = 38 }) =
           textAnchor="middle"
           fontSize={fontSize}
           fontWeight="900"
-          fontFamily={Platform.OS === 'ios' ? 'Arial Rounded MT Bold' : 'sans-serif-medium'}
+          fontFamily={Platform.OS === 'web' ? 'Baloo 2, Fredoka, sans-serif' : 'Fredoka_700Bold'}
         >
           {LETTERS.map((item, index) => (
             <TSpan key={`fill-${index}`} fill={item.color}>

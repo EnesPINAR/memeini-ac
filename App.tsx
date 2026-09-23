@@ -1,12 +1,7 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import {
-  useFonts,
-  Fredoka_400Regular,
-  Fredoka_600SemiBold,
-  Fredoka_700Bold,
-} from '@expo-google-fonts/fredoka';
+import { useFonts } from 'expo-font';
 
 import { IOSContainer } from './src/components/IOSContainer';
 import { SearchHomeScreen } from './src/screens/SearchHomeScreen';
@@ -19,11 +14,39 @@ import { MOCK_MEMES } from './src/data/mockMemes';
 type CurrentScreen = 'search_home' | 'search_results';
 
 export default function App() {
+  // Load full latin-ext (Turkish supported) Baloo 2 & Fredoka TTFs for native
   const [fontsLoaded] = useFonts({
-    Fredoka_400Regular,
-    Fredoka_600SemiBold,
-    Fredoka_700Bold,
+    Fredoka_400Regular: require('./assets/fonts/Baloo2-Turkish.ttf'),
+    Fredoka_600SemiBold: require('./assets/fonts/Baloo2-Turkish.ttf'),
+    Fredoka_700Bold: require('./assets/fonts/Baloo2-Turkish.ttf'),
   });
+
+  // On Web, also inject Google Fonts CSS v2 with full latin-ext (Turkish) weights (600, 700, 800)
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const linkId = 'cartoon-turkish-fonts-link';
+      if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href =
+          'https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Fredoka:wght@600;700&display=swap&subset=latin,latin-ext';
+        document.head.appendChild(link);
+      }
+
+      const styleId = 'cartoon-turkish-fonts-override';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          * {
+            font-family: 'Baloo 2', 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
 
   const [currentScreen, setCurrentScreen] = useState<CurrentScreen>('search_home');
   const [searchQuery, setSearchQuery] = useState('Ornek arama');
@@ -62,7 +85,7 @@ export default function App() {
   if (!fontsLoaded) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#FFE600" />
       </View>
     );
   }

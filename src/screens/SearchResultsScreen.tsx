@@ -36,9 +36,9 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
   onOpenAddMeme,
   onTabPress,
 }) => {
-  const [query, setQuery] = useState(initialQuery || 'Ornek arama');
+  const [query, setQuery] = useState(initialQuery || 'Örnek arama');
   const [searchData, setSearchData] = useState(() =>
-    searchMemes(initialQuery || 'Ornek arama')
+    searchMemes(initialQuery || 'Örnek arama')
   );
   const [currentBest, setCurrentBest] = useState<MemeItem>(searchData.bestMatch);
   const [alternatives, setAlternatives] = useState<MemeItem[]>(
