@@ -4,15 +4,15 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LiquidGlassView } from './LiquidGlassView';
+import { X, UploadCloud } from 'lucide-react-native';
+import { CartoonButton, CARTOON_COLORS } from './cartoon/CartoonUI';
 import { MemeItem } from '../types/meme';
 
 interface AddMemeModalProps {
@@ -71,89 +71,86 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <LiquidGlassView
-          borderRadius={32}
-          intensity={85}
-          style={styles.sheetContainer}
-        >
-          {/* iOS Grabber */}
+        <View style={styles.sheetContainer}>
+          {/* Cartoon Top Handle */}
           <View style={styles.grabberContainer}>
             <View style={styles.grabber} />
           </View>
 
-          {/* Modal Header Bar */}
+          {/* Cartoon Header Bar */}
           <View style={styles.navBar}>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.cancelText}>Vazgeç</Text>
-            </TouchableOpacity>
+            <Text style={styles.navTitle}>Yeni Meme Ekle 🎨</Text>
 
-            <Text style={styles.navTitle}>Meme Ekle</Text>
-
-            <TouchableOpacity onPress={handleSubmit} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.doneText}>Yayımla</Text>
-            </TouchableOpacity>
+            <Pressable onPress={onClose} style={styles.closeBtn}>
+              <X size={20} color="#000000" strokeWidth={3} />
+            </Pressable>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.formContent}>
-            {/* Liquid Grouped Section */}
-            <View style={styles.groupedSection}>
-              <View style={styles.inputRow}>
-                <Text style={styles.fieldLabel}>Başlık</Text>
-                <TextInput
-                  style={styles.fieldInput}
-                  placeholder="Meme başlığı girin"
-                  placeholderTextColor="#64748B"
-                  value={title}
-                  onChangeText={setTitle}
-                />
-              </View>
-
-              <View style={styles.separator} />
-
-              <View style={styles.inputRow}>
-                <Text style={styles.fieldLabel}>Görsel</Text>
-                <TextInput
-                  style={styles.fieldInput}
-                  placeholder="Görsel linki (opsiyonel)"
-                  placeholderTextColor="#64748B"
-                  value={imageUrl}
-                  onChangeText={setImageUrl}
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.separator} />
-
-              <View style={styles.inputRow}>
-                <Text style={styles.fieldLabel}>Etiketler</Text>
-                <TextInput
-                  style={styles.fieldInput}
-                  placeholder="#komik #kod #kedi"
-                  placeholderTextColor="#64748B"
-                  value={tags}
-                  onChangeText={setTags}
-                />
-              </View>
-
-              <View style={styles.separator} />
-
-              <View style={styles.inputRow}>
-                <Text style={styles.fieldLabel}>Kullanıcı</Text>
-                <TextInput
-                  style={styles.fieldInput}
-                  placeholder="Kullanıcı adınız"
-                  placeholderTextColor="#64748B"
-                  value={nickname}
-                  onChangeText={setNickname}
-                />
-              </View>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.formContent}
+          >
+            <Text style={styles.fieldLabel}>Meme Başlığı *</Text>
+            <View style={styles.inputBoxWrapper}>
+              <View style={styles.inputShadow} />
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="Örn: Pazartesi sabahı ben"
+                placeholderTextColor="#777777"
+                value={title}
+                onChangeText={setTitle}
+              />
             </View>
 
-            <Text style={styles.helperText}>
-              Eklediğiniz meme ilgili etiketlerle anında arama sonuçlarında gösterilecektir.
-            </Text>
+            <Text style={styles.fieldLabel}>Görsel URL (Opsiyonel)</Text>
+            <View style={styles.inputBoxWrapper}>
+              <View style={styles.inputShadow} />
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="https://..."
+                placeholderTextColor="#777777"
+                value={imageUrl}
+                onChangeText={setImageUrl}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <Text style={styles.fieldLabel}>Etiketler</Text>
+            <View style={styles.inputBoxWrapper}>
+              <View style={styles.inputShadow} />
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="#komik #kod #kedi"
+                placeholderTextColor="#777777"
+                value={tags}
+                onChangeText={setTags}
+              />
+            </View>
+
+            <Text style={styles.fieldLabel}>Kullanıcı Adın</Text>
+            <View style={styles.inputBoxWrapper}>
+              <View style={styles.inputShadow} />
+              <TextInput
+                style={styles.fieldInput}
+                placeholder="Örn: meme_lordu"
+                placeholderTextColor="#777777"
+                value={nickname}
+                onChangeText={setNickname}
+              />
+            </View>
+
+            <View style={styles.submitRow}>
+              <CartoonButton
+                label="Memeyi Yayımla!"
+                onPress={handleSubmit}
+                bgColor={CARTOON_COLORS.green}
+                icon={<UploadCloud size={22} color="#000000" strokeWidth={2.5} />}
+                style={{ width: '100%' }}
+                borderRadius={20}
+              />
+            </View>
           </ScrollView>
-        </LiquidGlassView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -162,14 +159,17 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    backgroundColor: '#FFFDF7',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderWidth: 3.5,
+    borderColor: '#000000',
     paddingTop: 8,
-    paddingBottom: 36,
+    paddingBottom: 32,
     maxHeight: '88%',
   },
   grabberContainer: {
@@ -177,73 +177,76 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   grabber: {
-    width: 38,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    width: 48,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#000000',
   },
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingVertical: 12,
-  },
-  cancelText: {
-    fontSize: 17,
-    color: '#0284C7',
-    fontWeight: '500',
+    borderBottomWidth: 3,
+    borderBottomColor: '#000000',
   },
   navTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontFamily: 'Fredoka_700Bold',
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#000000',
   },
-  doneText: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#0284C7',
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: CARTOON_COLORS.pink,
+    borderWidth: 2.5,
+    borderColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   formContent: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-  },
-  groupedSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 48,
+    paddingHorizontal: 22,
+    paddingTop: 14,
   },
   fieldLabel: {
-    width: 85,
+    fontFamily: 'Fredoka_700Bold',
     fontSize: 15,
-    color: '#0F172A',
-    fontWeight: '600',
+    fontWeight: '800',
+    color: '#000000',
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  inputBoxWrapper: {
+    position: 'relative',
+    marginBottom: 4,
+  },
+  inputShadow: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+    backgroundColor: '#000000',
   },
   fieldInput: {
-    flex: 1,
+    fontFamily: 'Fredoka_600SemiBold',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2.5,
+    borderColor: '#000000',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     fontSize: 15,
-    color: '#0F172A',
-    padding: 0,
+    fontWeight: '700',
+    color: '#000000',
   },
-  separator: {
-    height: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.06)',
-    marginLeft: 16,
-  },
-  helperText: {
-    fontSize: 13,
-    color: '#64748B',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    lineHeight: 18,
+  submitRow: {
+    marginTop: 24,
+    marginBottom: 12,
+    alignItems: 'center',
   },
 });

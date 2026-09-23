@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Star } from 'lucide-react-native';
+import { CARTOON_COLORS } from './cartoon/CartoonUI';
 
 interface StarRatingProps {
   initialRating?: number;
@@ -13,9 +14,10 @@ export const StarRating: React.FC<StarRatingProps> = ({
   initialRating = 0,
   onRate,
   readOnly = false,
-  size = 20,
+  size = 25,
 }) => {
   const [rating, setRating] = useState(initialRating);
+  const [pressedStar, setPressedStar] = useState<number | null>(null);
 
   const handlePress = (selectedStar: number) => {
     if (readOnly) return;
@@ -30,20 +32,27 @@ export const StarRating: React.FC<StarRatingProps> = ({
     <View style={styles.container}>
       {[1, 2, 3, 4, 5].map((starIndex) => {
         const isFilled = starIndex <= rating;
+        const isPressed = pressedStar === starIndex;
+
         return (
-          <TouchableOpacity
+          <Pressable
             key={starIndex}
-            activeOpacity={0.65}
             disabled={readOnly}
             onPress={() => handlePress(starIndex)}
-            style={styles.starTouch}
+            onPressIn={() => setPressedStar(starIndex)}
+            onPressOut={() => setPressedStar(null)}
+            style={[
+              styles.starTouch,
+              isPressed && { transform: [{ scale: 1.25 }, { rotate: '-8deg' }] },
+            ]}
           >
-            <Ionicons
-              name={isFilled ? 'star' : 'star'}
+            <Star
               size={size}
-              color={isFilled ? '#FF9500' : '#E5E5EA'}
+              color="#000000"
+              fill={isFilled ? CARTOON_COLORS.yellow : '#FFFFFF'}
+              strokeWidth={2.5}
             />
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
     </View>
@@ -56,7 +65,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   starTouch: {
-    marginRight: 2,
+    marginRight: 4,
     padding: 2,
   },
 });

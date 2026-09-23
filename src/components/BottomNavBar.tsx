@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LiquidGlassView } from './LiquidGlassView';
+import React, { useState } from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Search, PlusCircle, Compass, UserCircle } from 'lucide-react-native';
+import { CARTOON_COLORS } from './cartoon/CartoonUI';
 
 export type TabType = 'search' | 'add' | 'explore' | 'profile';
 
@@ -10,78 +10,63 @@ interface BottomNavBarProps {
   onTabPress: (tab: TabType) => void;
 }
 
+const TAB_ITEMS: { id: TabType; color: string; Icon: any }[] = [
+  { id: 'search', color: CARTOON_COLORS.yellow, Icon: Search },
+  { id: 'add', color: CARTOON_COLORS.green, Icon: PlusCircle },
+  { id: 'explore', color: CARTOON_COLORS.cyan, Icon: Compass },
+  { id: 'profile', color: CARTOON_COLORS.pink, Icon: UserCircle },
+];
+
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   activeTab = 'search',
   onTabPress,
 }) => {
-  const getIconColor = (tab: TabType) => {
-    return activeTab === tab ? '#007AFF' : '#64748B';
-  };
+  const [pressedTab, setPressedTab] = useState<TabType | null>(null);
 
   return (
     <View style={styles.container}>
-      <LiquidGlassView
-        borderRadius={34}
-        intensity={70}
-        style={styles.liquidTabBar}
-      >
-        {/* 1. Search */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => onTabPress('search')}
-          style={styles.tabItem}
-          accessibilityLabel="Arama"
-        >
-          <Ionicons
-            name={activeTab === 'search' ? 'search' : 'search-outline'}
-            size={25}
-            color={getIconColor('search')}
-          />
-          {activeTab === 'search' && <View style={styles.activeDot} />}
-        </TouchableOpacity>
+      <View style={styles.barWrapper}>
+        {/* 3D Cartoon Hard Black Shadow */}
+        <View style={styles.barShadow} />
 
-        {/* 2. Add Meme */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => onTabPress('add')}
-          style={styles.tabItem}
-          accessibilityLabel="Meme Ekle"
-        >
-          <View style={styles.addLiquidCircle}>
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </View>
-        </TouchableOpacity>
+        {/* Main Cartoon Capsule Nav Bar */}
+        <View style={styles.pillBar}>
+          {TAB_ITEMS.map(({ id, color, Icon }) => {
+            const isActive = activeTab === id;
+            const isPressed = pressedTab === id;
 
-        {/* 3. Explore */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => onTabPress('explore')}
-          style={styles.tabItem}
-          accessibilityLabel="Keşfet"
-        >
-          <Ionicons
-            name={activeTab === 'explore' ? 'compass' : 'compass-outline'}
-            size={26}
-            color={getIconColor('explore')}
-          />
-          {activeTab === 'explore' && <View style={styles.activeDot} />}
-        </TouchableOpacity>
-
-        {/* 4. Profile */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => onTabPress('profile')}
-          style={styles.tabItem}
-          accessibilityLabel="Profil"
-        >
-          <Ionicons
-            name={activeTab === 'profile' ? 'person-circle' : 'person-circle-outline'}
-            size={26}
-            color={getIconColor('profile')}
-          />
-          {activeTab === 'profile' && <View style={styles.activeDot} />}
-        </TouchableOpacity>
-      </LiquidGlassView>
+            return (
+              <Pressable
+                key={id}
+                onPress={() => onTabPress(id)}
+                onPressIn={() => setPressedTab(id)}
+                onPressOut={() => setPressedTab(null)}
+                style={styles.tabTouch}
+              >
+                <View
+                  style={[
+                    styles.iconBadge,
+                    isActive && {
+                      backgroundColor: color,
+                      borderWidth: 2.5,
+                      borderColor: '#000000',
+                    },
+                    isPressed && {
+                      transform: [{ translateY: 2 }, { scale: 0.94 }],
+                    },
+                  ]}
+                >
+                  <Icon
+                    size={28}
+                    color="#000000"
+                    strokeWidth={2.5}
+                  />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
     </View>
   );
 };
@@ -89,7 +74,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 22,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -97,43 +82,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     zIndex: 90,
   },
-  liquidTabBar: {
+  barWrapper: {
+    width: '100%',
+    maxWidth: 360,
+    height: 66,
+    position: 'relative',
+  },
+  barShadow: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    width: '100%',
+    height: '100%',
+    borderRadius: 36,
+    backgroundColor: '#000000',
+  },
+  pillBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    width: '100%',
-    maxWidth: 360,
-    height: 64,
-    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 36,
+    borderWidth: 3,
+    borderColor: '#000000',
+    paddingHorizontal: 14,
   },
-  tabItem: {
+  tabTouch: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    position: 'relative',
   },
-  addLiquidCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
+  iconBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  activeDot: {
-    position: 'absolute',
-    bottom: 8,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#007AFF',
   },
 });

@@ -1,45 +1,28 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Host, Button } from '@expo/ui/swift-ui';
-import { buttonStyle, tint, controlSize } from '@expo/ui/swift-ui/modifiers';
-import { Ionicons } from '@expo/vector-icons';
+import { PlusCircle } from 'lucide-react-native';
+import { CartoonButton, CARTOON_COLORS } from './cartoon/CartoonUI';
 
 export interface ExpoUIButtonProps {
   label: string;
   onPress: () => void;
-  iconName?: keyof typeof Ionicons.glyphMap;
+  iconName?: string;
+  bgColor?: string;
 }
 
 export const ExpoUIButton: React.FC<ExpoUIButtonProps> = ({
   label,
   onPress,
+  bgColor = CARTOON_COLORS.yellow,
 }) => {
   return (
-    <View style={styles.hostWrapper}>
-      <Host style={styles.host}>
-        <Button
-          label={label}
-          systemImage="plus.circle.fill"
-          onPress={onPress}
-          modifiers={[
-            buttonStyle('borderedProminent'),
-            tint('#0284C7'),
-            controlSize('regular'),
-          ]}
-        />
-      </Host>
-    </View>
+    <CartoonButton
+      label={label}
+      onPress={onPress}
+      bgColor={bgColor}
+      textColor="#000000"
+      rightIcon={<PlusCircle size={22} color="#000000" strokeWidth={2.5} />}
+      borderRadius={24}
+      shadowSize={4}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  hostWrapper: {
-    height: 38,
-    minWidth: 110,
-    justifyContent: 'center',
-  },
-  host: {
-    height: 38,
-    minWidth: 110,
-  },
-});

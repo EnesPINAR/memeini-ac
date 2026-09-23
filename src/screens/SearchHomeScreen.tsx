@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import {
   View,
-  TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ImageBackground,
   SafeAreaView,
   Keyboard,
   ScrollView,
-  Text,
-  Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Search, X } from 'lucide-react-native';
 import { ColorfulTitle } from '../components/ColorfulTitle';
 import { BottomNavBar, TabType } from '../components/BottomNavBar';
-import { LiquidGlassView } from '../components/LiquidGlassView';
+import {
+  CartoonSearchInput,
+  CartoonBadge,
+  CARTOON_COLORS,
+} from '../components/cartoon/CartoonUI';
 
 interface SearchHomeScreenProps {
   onSearch: (query: string) => void;
@@ -33,11 +34,9 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
     if (query.trim()) {
       Keyboard.dismiss();
       onSearch(query.trim());
+    } else {
+      onSearch('hamster');
     }
-  };
-
-  const handleClear = () => {
-    setQuery('');
   };
 
   return (
@@ -59,57 +58,53 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
 
             {/* Original Colorful Title "Meme'ini Bul" */}
             <View style={styles.titleContainer}>
-              <ColorfulTitle fontSize={38} />
+              <ColorfulTitle fontSize={40} />
             </View>
 
-            {/* Liquid Glass Search Bar Capsule */}
+            {/* Cartoon 3D Search Bar */}
             <View style={styles.searchBarContainer}>
-              <LiquidGlassView
-                borderRadius={28}
-                intensity={65}
-                style={styles.liquidSearchBar}
-              >
-                <Ionicons name="search" size={20} color="#1E293B" style={styles.searchIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Meme veya etiket ara..."
-                  placeholderTextColor="#475569"
-                  value={query}
-                  onChangeText={setQuery}
-                  returnKeyType="search"
-                  onSubmitEditing={handleSearchSubmit}
-                  autoCorrect={false}
-                  clearButtonMode="while-editing"
-                />
-                {query.length > 0 && Platform.OS !== 'ios' && (
-                  <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-                    <Ionicons name="close-circle" size={19} color="#475569" />
-                  </TouchableOpacity>
-                )}
-              </LiquidGlassView>
+              <CartoonSearchInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Meme veya etiket ara..."
+                returnKeyType="search"
+                onSubmitEditing={handleSearchSubmit}
+                autoCorrect={false}
+                rightElement={
+                  <View style={styles.searchActions}>
+                    {query.length > 0 && (
+                      <Pressable
+                        onPress={() => setQuery('')}
+                        style={styles.clearBtn}
+                      >
+                        <X size={18} color="#000000" strokeWidth={2.5} />
+                      </Pressable>
+                    )}
+                    <Pressable
+                      onPress={handleSearchSubmit}
+                      style={styles.searchTriggerBtn}
+                    >
+                      <Search size={22} color="#000000" strokeWidth={2.8} />
+                    </Pressable>
+                  </View>
+                }
+              />
             </View>
 
-            {/* Liquid Glass Floating Tag Badges */}
+            {/* Cartoon Pop Tag Badges */}
             <View style={styles.tagsContainer}>
-              {POPULAR_TAGS.map((tag) => (
-                <TouchableOpacity
+              {POPULAR_TAGS.map((tag, idx) => (
+                <CartoonBadge
                   key={tag}
-                  activeOpacity={0.75}
+                  tag={tag}
+                  index={idx}
                   onPress={() => onSearch(tag)}
-                >
-                  <LiquidGlassView
-                    borderRadius={18}
-                    intensity={55}
-                    style={styles.liquidTagBadge}
-                  >
-                    <Text style={styles.tagText}>#{tag}</Text>
-                  </LiquidGlassView>
-                </TouchableOpacity>
+                />
               ))}
             </View>
           </ScrollView>
 
-          {/* Liquid Glass Floating Tab Bar */}
+          {/* Cartoon 3D Bottom Navigation Bar */}
           <BottomNavBar activeTab="search" onTabPress={onTabPress} />
         </SafeAreaView>
       </ImageBackground>
@@ -136,36 +131,41 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   topSpace: {
-    height: 130,
+    height: 126,
   },
   titleContainer: {
-    marginBottom: 22,
+    marginBottom: 20,
     alignItems: 'center',
   },
   searchBarContainer: {
     width: '100%',
     maxWidth: 360,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  liquidSearchBar: {
+  searchActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 54,
+    gap: 6,
   },
-  searchIcon: {
-    marginRight: 10,
+  clearBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: CARTOON_COLORS.pastelPink,
+    borderWidth: 2,
+    borderColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
-    paddingVertical: 8,
-  },
-  clearButton: {
-    padding: 4,
+  searchTriggerBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: CARTOON_COLORS.yellow,
+    borderWidth: 2.5,
+    borderColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -173,16 +173,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     maxWidth: 360,
-    marginTop: 6,
-  },
-  liquidTagBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  tagText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0284C7',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    marginTop: 4,
   },
 });
