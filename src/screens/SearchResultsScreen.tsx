@@ -192,6 +192,7 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
               <CartoonCard
                 borderRadius={18}
                 shadowOffset={4}
+                style={styles.altCardContainer}
                 contentStyle={styles.altCardInner}
               >
                 {altMeme.imageUrl ? (
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
   },
   mainMemeImage: {
     width: '100%',
-    height: '100%',
+    height: 215,
   },
   topMatchSticker: {
     position: 'absolute',
@@ -379,13 +380,18 @@ const styles = StyleSheet.create({
     width: '47.5%',
     height: 115,
   },
+  altCardContainer: {
+    width: '100%',
+    height: 115,
+  },
   altCardInner: {
     width: '100%',
-    height: '100%',
+    height: 115,
+    backgroundColor: '#FFFFFF',
   },
   altCardImage: {
     width: '100%',
-    height: '100%',
+    height: 115,
   },
   altCardCaption: {
     position: 'absolute',

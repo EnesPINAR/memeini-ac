@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Meme'ini Bul",
-    "slug": "memeini-bul",
+    "slug": "memeiniac",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,6 +23,12 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3335e353-abe7-4fcb-99ed-d5163e679aa2"
+      }
+    },
+    "owner": "enespinar"
   }
 }
