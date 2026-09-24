@@ -9,9 +9,43 @@ import {
   TextStyle,
   StyleProp,
   TextInputProps,
+  Platform,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Ellipse } from 'react-native-svg';
 import rough from 'roughjs';
+
+// Cross-platform font presets:
+// On native (iOS/Android), omitting fontWeight when using static PostScript font names
+// prevents React Native from failing font-weight descriptor lookups and falling back to system fonts.
+export const CARTOON_FONTS = {
+  extraBold: Platform.select<TextStyle>({
+    web: {
+      fontFamily: "'Baloo 2', 'Baloo2-ExtraBold', 'Fredoka', sans-serif",
+      fontWeight: '800',
+    },
+    default: {
+      fontFamily: 'Baloo2-ExtraBold',
+    },
+  })!,
+  bold: Platform.select<TextStyle>({
+    web: {
+      fontFamily: "'Baloo 2', 'Baloo2-Bold', 'Fredoka', sans-serif",
+      fontWeight: '700',
+    },
+    default: {
+      fontFamily: 'Baloo2-Bold',
+    },
+  })!,
+  semiBold: Platform.select<TextStyle>({
+    web: {
+      fontFamily: "'Baloo 2', 'Baloo2-SemiBold', 'Fredoka', sans-serif",
+      fontWeight: '600',
+    },
+    default: {
+      fontFamily: 'Baloo2-SemiBold',
+    },
+  })!,
+};
 
 // Color Palette for Cartoon Pop UI
 export const CARTOON_COLORS = {
@@ -38,6 +72,77 @@ const TAG_PALETTE = [
   CARTOON_COLORS.pastelGreen,
   CARTOON_COLORS.pastelPurple,
 ];
+
+export type GlossSize = 'xs' | 'sm' | 'md' | 'lg';
+
+const GLOSS_PRESETS: Record<
+  GlossSize,
+  { width: number; height: number; top: number; left: number }
+> = {
+  xs: { width: 13, height: 11, top: 2, left: 3 },
+  sm: { width: 13, height: 11, top: 2, left: 3 },
+  md: { width: 14, height: 12, top: 2.5, left: 3.5 },
+  lg: { width: 15, height: 13, top: 3, left: 4 },
+};
+
+/**
+ * Organic Top-Left Cartoon Bubble Gloss (Plump Curved Jelly-Bean + Companion Droplet Dot)
+ * Sized compactly like tag badges across all buttons and UI elements.
+ */
+export const CartoonCornerGloss: React.FC<{
+  size?: GlossSize;
+  top?: number;
+  left?: number;
+  opacity?: number;
+  color?: string;
+  style?: StyleProp<ViewStyle>;
+}> = ({
+  size = 'xs',
+  top,
+  left,
+  opacity = 0.85,
+  color = '#FFFFFF',
+  style,
+}) => {
+  const preset = GLOSS_PRESETS[size];
+
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.cornerGlossWrap,
+        {
+          top: top ?? preset.top,
+          left: left ?? preset.left,
+        },
+        style,
+      ]}
+    >
+      <Svg
+        width={preset.width}
+        height={preset.height}
+        viewBox="0 0 28 24"
+      >
+        {/* Main plump curved jelly-bean highlight hugging the top-left corner arc */}
+        <Path
+          d="M 6.6 11.4 C 5.6 7.4, 10.4 2.6, 17.0 2.3 C 20.8 2.1, 23.0 4.4, 22.0 7.3 C 21.1 10.1, 17.2 11.1, 13.4 12.3 C 9.7 13.5, 7.4 14.2, 6.6 11.4 Z"
+          fill={color}
+          fillOpacity={opacity}
+        />
+        {/* Lower-left soft round companion bubble dot along the curve */}
+        <Ellipse
+          cx="5.2"
+          cy="17.0"
+          rx="2.6"
+          ry="2.8"
+          transform="rotate(-14 5.2 17.0)"
+          fill={color}
+          fillOpacity={opacity}
+        />
+      </Svg>
+    </View>
+  );
+};
 
 /**
  * Hand-drawn SVG ornament generated via Rough.js
@@ -84,10 +189,14 @@ interface CartoonCardProps {
   bgColor?: string;
   shadowOffset?: number;
   borderRadius?: number;
+  onPress?: () => void;
+  interactive?: boolean;
+  showGloss?: boolean;
 }
 
 /**
- * 3D Comic / Cartoon Card with thick ink border and hard offset shadow
+ * 3D Comic / Cartoon Card with thick ink border, hard offset shadow, and optional 3D hover/press physics.
+ * By default showGloss is false so meme images/videos have no artificial shine overlay.
  */
 export const CartoonCard: React.FC<CartoonCardProps> = ({
   children,
@@ -96,9 +205,24 @@ export const CartoonCard: React.FC<CartoonCardProps> = ({
   bgColor = '#FFFFFF',
   shadowOffset = 5,
   borderRadius = 24,
+  onPress,
+  interactive = false,
+  showGloss = false,
 }) => {
-  return (
-    <View style={[styles.cardWrapper, style]}>
+  const [pressed, setPressed] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const isInteractive = interactive || Boolean(onPress);
+
+  const offsetXY = isInteractive
+    ? pressed
+      ? shadowOffset - 1
+      : hovered
+      ? Math.max(2, Math.round(shadowOffset * 0.6))
+      : 0
+    : 0;
+
+  const cardInner = (
+    <>
       {/* Hard Black 3D Cartoon Shadow Block */}
       <View
         style={[
@@ -117,16 +241,33 @@ export const CartoonCard: React.FC<CartoonCardProps> = ({
           {
             backgroundColor: bgColor,
             borderRadius,
+            transform: [{ translateX: offsetXY }, { translateY: offsetXY }],
           },
           contentStyle,
         ]}
       >
-        {/* Cartoon Specular Shine Mark */}
-        <View style={styles.cardShine} pointerEvents="none" />
+        {showGloss && <CartoonCornerGloss size="xs" top={3} left={4} />}
         {children}
       </View>
-    </View>
+    </>
   );
+
+  if (isInteractive) {
+    return (
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        onHoverIn={() => setHovered(true)}
+        onHoverOut={() => setHovered(false)}
+        style={[styles.cardWrapper, style]}
+      >
+        {cardInner}
+      </Pressable>
+    );
+  }
+
+  return <View style={[styles.cardWrapper, style]}>{cardInner}</View>;
 };
 
 interface CartoonButtonProps {
@@ -137,13 +278,14 @@ interface CartoonButtonProps {
   icon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  faceStyle?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   borderRadius?: number;
   shadowSize?: number;
 }
 
 /**
- * Interactive Bouncy Cartoon Button with Press-In Physics
+ * Interactive Bouncy Cartoon Button with Hover & Press-In Physics
  */
 export const CartoonButton: React.FC<CartoonButtonProps> = ({
   label,
@@ -153,24 +295,37 @@ export const CartoonButton: React.FC<CartoonButtonProps> = ({
   icon,
   rightIcon,
   style,
+  faceStyle,
   textStyle,
   borderRadius = 24,
   shadowSize = 4,
 }) => {
   const [pressed, setPressed] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const offsetXY = pressed
+    ? shadowSize - 1
+    : hovered
+    ? Math.max(1.5, shadowSize - 1.5)
+    : 0;
 
   return (
     <Pressable
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       style={[styles.btnContainer, style]}
     >
-      {/* Hard Black Cartoon Shadow */}
+      {/* Hard Black Cartoon Shadow (matches exact dimensions of btnFace) */}
       <View
         style={[
           styles.btnShadow,
+          faceStyle,
           {
+            backgroundColor: '#000000',
+            borderColor: '#000000',
             borderRadius,
             top: shadowSize,
             left: shadowSize,
@@ -178,29 +333,28 @@ export const CartoonButton: React.FC<CartoonButtonProps> = ({
         ]}
       />
 
-      {/* Button Face that physically pushes into the shadow when pressed */}
+      {/* Button Face that physically pushes into the shadow when hovered or pressed */}
       <View
         style={[
           styles.btnFace,
           {
             backgroundColor: bgColor,
             borderRadius,
-            transform: pressed
-              ? [{ translateX: shadowSize - 1 }, { translateY: shadowSize - 1 }]
-              : [{ translateX: 0 }, { translateY: 0 }],
+            transform: [{ translateX: offsetXY }, { translateY: offsetXY }],
           },
+          faceStyle,
         ]}
       >
-        {/* Top Cartoon Gloss Bubble */}
-        <View style={styles.btnShine} pointerEvents="none" />
+        {/* Small Tag-Sized Top-Left Cartoon Bubble Gloss */}
+        <CartoonCornerGloss size="xs" top={2} left={3} opacity={0.85} />
 
-        {icon ? <View style={styles.iconLeft}>{icon}</View> : null}
+        {icon ? <View style={label ? styles.iconLeft : undefined}>{icon}</View> : null}
         {label ? (
           <Text style={[styles.btnText, { color: textColor }, textStyle]}>
             {label}
           </Text>
         ) : null}
-        {rightIcon ? <View style={styles.iconRight}>{rightIcon}</View> : null}
+        {rightIcon ? <View style={label ? styles.iconRight : undefined}>{rightIcon}</View> : null}
       </View>
     </Pressable>
   );
@@ -221,13 +375,17 @@ export const CartoonBadge: React.FC<CartoonBadgeProps> = ({
   onPress,
 }) => {
   const [pressed, setPressed] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const bgColor = TAG_PALETTE[index % TAG_PALETTE.length];
+  const offsetXY = pressed ? 2 : hovered ? 1.5 : 0;
 
   return (
     <Pressable
       onPress={onPress}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       style={styles.badgeWrapper}
     >
       <View style={styles.badgeShadow} />
@@ -236,12 +394,11 @@ export const CartoonBadge: React.FC<CartoonBadgeProps> = ({
           styles.badgeFace,
           {
             backgroundColor: bgColor,
-            transform: pressed
-              ? [{ translateX: 2 }, { translateY: 2 }]
-              : [{ translateX: 0 }, { translateY: 0 }],
+            transform: [{ translateX: offsetXY }, { translateY: offsetXY }],
           },
         ]}
       >
+        <CartoonCornerGloss size="xs" top={2} left={3} opacity={0.85} />
         <Text style={styles.badgeText}>#{tag}</Text>
       </View>
     </Pressable>
@@ -268,6 +425,7 @@ export const CartoonSearchInput: React.FC<CartoonSearchInputProps> = ({
     <View style={styles.searchWrapper}>
       <View style={styles.searchShadow} />
       <View style={styles.searchBody}>
+        <CartoonCornerGloss size="xs" top={3} left={6} opacity={0.85} />
         <TextInput
           value={value}
           style={styles.searchInput}
@@ -281,6 +439,10 @@ export const CartoonSearchInput: React.FC<CartoonSearchInputProps> = ({
 };
 
 const styles = StyleSheet.create({
+  cornerGlossWrap: {
+    position: 'absolute',
+    zIndex: 10,
+  },
   cardWrapper: {
     position: 'relative',
   },
@@ -297,16 +459,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#000000',
     overflow: 'hidden',
-  },
-  cardShine: {
-    position: 'absolute',
-    top: 6,
-    left: 14,
-    width: 32,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    zIndex: 10,
   },
   btnContainer: {
     position: 'relative',
@@ -330,19 +482,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
-  btnShine: {
-    position: 'absolute',
-    top: 3,
-    left: 10,
-    right: 10,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
-  },
   btnText: {
-    fontFamily: 'Fredoka_700Bold',
+    ...CARTOON_FONTS.extraBold,
     fontSize: 15,
-    fontWeight: '900',
     letterSpacing: 0.3,
   },
   iconLeft: {
@@ -376,9 +518,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   badgeText: {
-    fontFamily: 'Fredoka_700Bold',
+    ...CARTOON_FONTS.extraBold,
     fontSize: 13,
-    fontWeight: '800',
     color: '#000000',
   },
   searchWrapper: {
@@ -409,9 +550,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Fredoka_600SemiBold',
+    ...CARTOON_FONTS.semiBold,
     fontSize: 16,
-    fontWeight: '700',
     color: '#000000',
     paddingVertical: 8,
   },

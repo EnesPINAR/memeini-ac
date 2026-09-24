@@ -2,6 +2,7 @@ export interface MemeItem {
   id: string;
   title: string;
   imageUrl: string;
+  mediaType?: 'image' | 'video';
   tags: string[];
   uploaderNickname: string;
   uploaderAvatar?: string;

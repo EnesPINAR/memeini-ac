@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { X, UploadCloud } from 'lucide-react-native';
-import { CartoonButton, CARTOON_COLORS } from './cartoon/CartoonUI';
+import { CartoonButton, CARTOON_COLORS, CARTOON_FONTS } from './cartoon/CartoonUI';
 import { MemeItem } from '../types/meme';
 
 interface AddMemeModalProps {
@@ -135,7 +135,7 @@ export const AddMemeModal: React.FC<AddMemeModalProps> = ({
 
             <View style={styles.submitRow}>
               <CartoonButton
-                label="Memeyi Yayımla!"
+                label="Meme'i Yayımla!"
                 onPress={handleSubmit}
                 bgColor={CARTOON_COLORS.green}
                 icon={<UploadCloud size={22} color="#000000" strokeWidth={2.5} />}
@@ -186,9 +186,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#000000',
   },
   navTitle: {
-    fontFamily: 'Fredoka_700Bold',
+    ...CARTOON_FONTS.extraBold,
     fontSize: 22,
-    fontWeight: '900',
     color: '#000000',
   },
   closeBtn: {
@@ -206,9 +205,8 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   fieldLabel: {
-    fontFamily: 'Fredoka_700Bold',
+    ...CARTOON_FONTS.extraBold,
     fontSize: 15,
-    fontWeight: '800',
     color: '#000000',
     marginBottom: 6,
     marginTop: 10,
@@ -239,10 +237,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fieldInput: {
-    fontFamily: 'Fredoka_600SemiBold',
+    ...CARTOON_FONTS.semiBold,
     backgroundColor: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
     color: '#000000',
     paddingVertical: 6,
   },

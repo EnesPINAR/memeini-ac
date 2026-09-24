@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
-import Svg, { Text as SvgText, TSpan } from 'react-native-svg';
+import { View, Text, StyleSheet } from 'react-native';
+import { CARTOON_FONTS } from './cartoon/CartoonUI';
 
 interface ColorfulTitleProps {
   fontSize?: number;
@@ -22,64 +22,107 @@ const LETTERS = [
   { char: 'l', color: '#F43F5E' },
 ];
 
+// Multi-directional circular offsets + 3D bottom cartoon shadow for thick ink outline
+const STROKE_OFFSETS = [
+  { x: -3, y: 0 },
+  { x: 3, y: 0 },
+  { x: 0, y: -3 },
+  { x: 0, y: 3 },
+  { x: -2.2, y: -2.2 },
+  { x: 2.2, y: -2.2 },
+  { x: -2.2, y: 2.2 },
+  { x: 2.2, y: 2.2 },
+  { x: -3, y: -1.2 },
+  { x: 3, y: -1.2 },
+  { x: -3, y: 1.2 },
+  { x: 3, y: 1.2 },
+  { x: -1.2, y: -3 },
+  { x: 1.2, y: -3 },
+  { x: -1.2, y: 3 },
+  { x: 1.2, y: 3 },
+  // 3D bottom cartoon drop stroke
+  { x: 0, y: 4.2 },
+  { x: 1.6, y: 4.2 },
+  { x: -1.6, y: 4.2 },
+];
+
 export const ColorfulTitle: React.FC<ColorfulTitleProps> = ({ fontSize = 38 }) => {
-  const svgWidth = fontSize * 7.5;
-  const svgHeight = fontSize * 1.5;
+  const lineHeight = Math.round(fontSize * 1.32);
 
   return (
     <View style={styles.container}>
-      <Svg
-        width={svgWidth}
-        height={svgHeight}
-        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        style={styles.svg}
-      >
-        {/* Pass 1: Thick black stroke outline behind the letters */}
-        <SvgText
-          x="50%"
-          y="72%"
-          textAnchor="middle"
-          fontSize={fontSize}
-          fontWeight="900"
-          fontFamily={Platform.OS === 'web' ? 'Baloo 2, Fredoka, sans-serif' : 'Fredoka_700Bold'}
-          stroke="#000000"
-          strokeWidth="6"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        >
-          {LETTERS.map((item, index) => (
-            <TSpan key={`stroke-${index}`} fill="#000000">
-              {item.char}
-            </TSpan>
-          ))}
-        </SvgText>
+      <View style={styles.textWrapper}>
+        {/* Pass 1: Thick black cartoon stroke outline behind the letters */}
+        {STROKE_OFFSETS.map((offset, idx) => (
+          <Text
+            key={`stroke-${idx}`}
+             accessible={false}
+            importantForAccessibility="no"
+            style={[
+              styles.baseText,
+              styles.strokeLayer,
+              {
+                fontSize,
+                lineHeight,
+                transform: [{ translateX: offset.x }, { translateY: offset.y }],
+              },
+            ]}
+          >
+            {LETTERS.map((item, charIdx) => (
+              <Text key={`s-${idx}-${charIdx}`} style={styles.strokeChar}>
+                {item.char}
+              </Text>
+            ))}
+          </Text>
+        ))}
 
-        {/* Pass 2: Vibrant colorful fill on top */}
-        <SvgText
-          x="50%"
-          y="72%"
-          textAnchor="middle"
-          fontSize={fontSize}
-          fontWeight="900"
-          fontFamily={Platform.OS === 'web' ? 'Baloo 2, Fredoka, sans-serif' : 'Fredoka_700Bold'}
+        {/* Pass 2: Vibrant colorful fill on top (defines exact layout bounds) */}
+        <Text
+          style={[
+            styles.baseText,
+            {
+              fontSize,
+              lineHeight,
+            },
+          ]}
         >
           {LETTERS.map((item, index) => (
-            <TSpan key={`fill-${index}`} fill={item.color}>
+            <Text key={`fill-${index}`} style={{ color: item.color }}>
               {item.char}
-            </TSpan>
+            </Text>
           ))}
-        </SvgText>
-      </Svg>
+        </Text>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  svg: {
-    overflow: 'visible',
+  textWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  baseText: {
+    ...CARTOON_FONTS.extraBold,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    includeFontPadding: false,
+    textAlign: 'center',
+  },
+  strokeLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    color: '#000000',
+  },
+  strokeChar: {
+    color: '#000000',
   },
 });
+

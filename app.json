@@ -22,7 +22,24 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Baloo2-SemiBold.ttf",
+            "./assets/fonts/Baloo2-Bold.ttf",
+            "./assets/fonts/Baloo2-ExtraBold.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Meme olarak yüklemek istediğiniz fotoğraf ve videoları seçebilmek için galeri erişimi gerekiyor.",
+          "cameraPermission": "Anlık meme fotoğrafı veya videosu çekebilmek için kamera erişimi gerekiyor."
+        }
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

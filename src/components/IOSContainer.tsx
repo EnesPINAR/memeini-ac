@@ -208,7 +208,6 @@ const styles = StyleSheet.create({
   },
   appContent: {
     flex: 1,
-    paddingTop: 48,
   },
   homeIndicatorContainer: {
     position: 'absolute',

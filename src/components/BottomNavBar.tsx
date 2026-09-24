@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Search, PlusCircle, Compass, UserCircle } from 'lucide-react-native';
-import { CARTOON_COLORS } from './cartoon/CartoonUI';
+import { CARTOON_COLORS, CartoonCornerGloss } from './cartoon/CartoonUI';
 
 export type TabType = 'search' | 'add' | 'explore' | 'profile';
 
@@ -31,6 +31,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
         {/* Main Cartoon Capsule Nav Bar */}
         <View style={styles.pillBar}>
+          <CartoonCornerGloss size="lg" top={4} left={8} />
           {TAB_ITEMS.map(({ id, color, Icon }) => {
             const isActive = activeTab === id;
             const isPressed = pressedTab === id;
@@ -56,6 +57,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
                     },
                   ]}
                 >
+                  {isActive && <CartoonCornerGloss size="sm" top={2} left={3} />}
                   <Icon
                     size={28}
                     color="#000000"

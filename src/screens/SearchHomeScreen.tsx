@@ -4,16 +4,17 @@ import {
   Pressable,
   StyleSheet,
   ImageBackground,
-  SafeAreaView,
   Keyboard,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X } from 'lucide-react-native';
 import { ColorfulTitle } from '../components/ColorfulTitle';
 import { BottomNavBar, TabType } from '../components/BottomNavBar';
 import {
   CartoonSearchInput,
   CartoonBadge,
+  CartoonCornerGloss,
   CARTOON_COLORS,
 } from '../components/cartoon/CartoonUI';
 
@@ -29,6 +30,9 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
   onTabPress,
 }) => {
   const [query, setQuery] = useState('');
+  const insets = useSafeAreaInsets();
+  // Consistent top spacing from the very top of the full-bleed background image across Web, iOS, and Android
+  const topOffset = Math.max(insets.top + 82, 142);
 
   const handleSearchSubmit = () => {
     if (query.trim()) {
@@ -47,14 +51,14 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        <SafeAreaView style={styles.safeArea}>
+        <View style={styles.safeArea}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Top Spacing to position under the rainbow */}
-            <View style={styles.topSpace} />
+            {/* Top Spacing to position right under the rainbow consistently on Web & Mobile */}
+            <View style={{ height: topOffset }} />
 
             {/* Original Colorful Title "Meme'ini Bul" */}
             <View style={styles.titleContainer}>
@@ -84,6 +88,7 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
                       onPress={handleSearchSubmit}
                       style={styles.searchTriggerBtn}
                     >
+                      <CartoonCornerGloss size="sm" top={2} left={3} />
                       <Search size={22} color="#000000" strokeWidth={2.8} />
                     </Pressable>
                   </View>
@@ -91,8 +96,13 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
               />
             </View>
 
-            {/* Cartoon Pop Tag Badges */}
-            <View style={styles.tagsContainer}>
+            {/* Cartoon Pop Tag Badges (Single-line Horizontal Scroll) */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.tagsScroll}
+              contentContainerStyle={styles.tagsContainer}
+            >
               {POPULAR_TAGS.map((tag, idx) => (
                 <CartoonBadge
                   key={tag}
@@ -101,12 +111,12 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
                   onPress={() => onSearch(tag)}
                 />
               ))}
-            </View>
+            </ScrollView>
           </ScrollView>
 
           {/* Cartoon 3D Bottom Navigation Bar */}
           <BottomNavBar activeTab="search" onTabPress={onTabPress} />
-        </SafeAreaView>
+        </View>
       </ImageBackground>
     </View>
   );
@@ -167,12 +177,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tagsScroll: {
+    width: '100%',
+    maxWidth: 360,
+    flexGrow: 0,
+    marginTop: 4,
+  },
   tagsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    alignItems: 'center',
     gap: 8,
-    maxWidth: 360,
-    marginTop: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
 });
