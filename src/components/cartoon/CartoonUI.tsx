@@ -225,12 +225,15 @@ export const CartoonCard: React.FC<CartoonCardProps> = ({
     <>
       {/* Hard Black 3D Cartoon Shadow Block */}
       <View
+        pointerEvents="none"
         style={[
           styles.shadowBlock,
           {
             borderRadius,
             top: shadowOffset,
             left: shadowOffset,
+            right: -shadowOffset,
+            bottom: -shadowOffset,
           },
         ]}
       />
@@ -318,17 +321,18 @@ export const CartoonButton: React.FC<CartoonButtonProps> = ({
       onHoverOut={() => setHovered(false)}
       style={[styles.btnContainer, style]}
     >
-      {/* Hard Black Cartoon Shadow (matches exact dimensions of btnFace) */}
+      {/* Hard Black Cartoon Shadow (anchored to exact 4 edges of btnContainer shifted by shadowSize) */}
       <View
+        pointerEvents="none"
         style={[
           styles.btnShadow,
-          faceStyle,
           {
             backgroundColor: '#000000',
-            borderColor: '#000000',
             borderRadius,
             top: shadowSize,
             left: shadowSize,
+            right: -shadowSize,
+            bottom: -shadowSize,
           },
         ]}
       />
@@ -364,6 +368,7 @@ interface CartoonBadgeProps {
   tag: string;
   index?: number;
   onPress?: () => void;
+  selected?: boolean;
 }
 
 /**
@@ -373,11 +378,14 @@ export const CartoonBadge: React.FC<CartoonBadgeProps> = ({
   tag,
   index = 0,
   onPress,
+  selected = false,
 }) => {
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const bgColor = TAG_PALETTE[index % TAG_PALETTE.length];
-  const offsetXY = pressed ? 2 : hovered ? 1.5 : 0;
+  const bgColor = selected
+    ? CARTOON_COLORS.yellow
+    : TAG_PALETTE[index % TAG_PALETTE.length];
+  const offsetXY = pressed ? 2 : selected || hovered ? 1.5 : 0;
 
   return (
     <Pressable
@@ -388,18 +396,22 @@ export const CartoonBadge: React.FC<CartoonBadgeProps> = ({
       onHoverOut={() => setHovered(false)}
       style={styles.badgeWrapper}
     >
-      <View style={styles.badgeShadow} />
+      <View pointerEvents="none" style={styles.badgeShadow} />
       <View
         style={[
           styles.badgeFace,
           {
             backgroundColor: bgColor,
+            borderWidth: selected ? 3 : 2.5,
             transform: [{ translateX: offsetXY }, { translateY: offsetXY }],
           },
         ]}
       >
         <CartoonCornerGloss size="xs" top={2} left={3} opacity={0.85} />
-        <Text style={styles.badgeText}>#{tag}</Text>
+        <Text style={styles.badgeText}>
+          #{tag}
+          {selected ? ' ✓' : ''}
+        </Text>
       </View>
     </Pressable>
   );
@@ -423,7 +435,7 @@ export const CartoonSearchInput: React.FC<CartoonSearchInputProps> = ({
 }) => {
   return (
     <View style={styles.searchWrapper}>
-      <View style={styles.searchShadow} />
+      <View pointerEvents="none" style={styles.searchShadow} />
       <View style={styles.searchBody}>
         <CartoonCornerGloss size="xs" top={3} left={6} opacity={0.85} />
         <TextInput
@@ -448,8 +460,6 @@ const styles = StyleSheet.create({
   },
   shadowBlock: {
     position: 'absolute',
-    width: '100%',
-    height: '100%',
     backgroundColor: '#000000',
     zIndex: 1,
   },
@@ -466,8 +476,6 @@ const styles = StyleSheet.create({
   },
   btnShadow: {
     position: 'absolute',
-    width: '100%',
-    height: '100%',
     backgroundColor: '#000000',
     zIndex: 1,
   },
@@ -502,8 +510,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 3,
     left: 3,
-    width: '100%',
-    height: '100%',
+    right: -3,
+    bottom: -3,
     borderRadius: 16,
     backgroundColor: '#000000',
     zIndex: 1,

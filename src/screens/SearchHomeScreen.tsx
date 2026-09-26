@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Asset } from 'expo-asset';
 import { Search, X } from 'lucide-react-native';
 import { ColorfulTitle } from '../components/ColorfulTitle';
 import { BottomNavBar, TabType } from '../components/BottomNavBar';
@@ -24,6 +25,7 @@ interface SearchHomeScreenProps {
 }
 
 const POPULAR_TAGS = ['hamster', 'yazılımcı', 'kedi', 'doge', 'sınav', 'pazartesi'];
+const BG_SOURCE = require('../../assets/images/rainbow_hamsters.jpg');
 
 export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
   onSearch,
@@ -33,6 +35,10 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
   const insets = useSafeAreaInsets();
   // Consistent top spacing from the very top of the full-bleed background image across Web, iOS, and Android
   const topOffset = Math.max(insets.top + 82, 142);
+
+  // Use local on-device file URI if available, fallback to bundled asset
+  const bgAsset = Asset.fromModule(BG_SOURCE);
+  const imageSource = bgAsset.localUri ? { uri: bgAsset.localUri } : BG_SOURCE;
 
   const handleSearchSubmit = () => {
     if (query.trim()) {
@@ -45,9 +51,9 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Background illustration matching Figma positioning */}
+      {/* Background illustration loaded locally from device cache */}
       <ImageBackground
-        source={require('../../assets/images/rainbow_hamsters.png')}
+        source={imageSource}
         style={styles.backgroundImage}
         resizeMode="cover"
       >

@@ -828,6 +828,8 @@ const styles = StyleSheet.create({
   titleCenter: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateY: Platform.OS === 'ios' ? 4 : 0 }],
   },
   headerSpacer: {
     width: 40,

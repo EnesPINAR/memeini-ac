@@ -3,6 +3,7 @@ export interface MemeItem {
   title: string;
   imageUrl: string;
   mediaType?: 'image' | 'video';
+  aspectRatio?: number; // width / height (e.g. 0.68 for tall pin, 1.0 for square, 1.3 for wide)
   tags: string[];
   uploaderNickname: string;
   uploaderAvatar?: string;
@@ -15,4 +16,5 @@ export interface SearchResultData {
   query: string;
   bestMatch: MemeItem;
   alternatives: MemeItem[];
+  noExactMatch?: boolean;
 }
