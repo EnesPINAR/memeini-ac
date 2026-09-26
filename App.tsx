@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
+import { Asset } from 'expo-asset';
 
 import { IOSContainer } from './src/components/IOSContainer';
 import { SearchHomeScreen } from './src/screens/SearchHomeScreen';
 import { SearchResultsScreen } from './src/screens/SearchResultsScreen';
 import { AddMemeScreen } from './src/screens/AddMemeScreen';
+import { ExploreScreen } from './src/screens/ExploreScreen';
+import { ProfileScreen } from './src/screens/ProfileScreen';
 import { TabType } from './src/components/BottomNavBar';
 import { MemeItem } from './src/types/meme';
 import { MOCK_MEMES } from './src/data/mockMemes';
 
-type CurrentScreen = 'search_home' | 'search_results' | 'add_meme';
+type CurrentScreen = 'search_home' | 'search_results' | 'add_meme' | 'explore' | 'profile';
 
 export default function App() {
   // Load static latin-ext (Turkish supported) Baloo 2 TTFs for iOS, Android, and Web
@@ -49,10 +52,38 @@ export default function App() {
     }
   }, []);
 
+  // Preload local device assets (cached directly on device)
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function preloadAssets() {
+      try {
+        await Asset.loadAsync([
+          require('./assets/images/rainbow_hamsters.jpg'),
+        ]);
+      } catch {
+        // continue gracefully
+      } finally {
+        setAssetsLoaded(true);
+      }
+    }
+    preloadAssets();
+  }, []);
+
   const [currentScreen, setCurrentScreen] = useState<CurrentScreen>('search_home');
-  const [previousScreen, setPreviousScreen] = useState<'search_home' | 'search_results'>('search_home');
+  const [previousScreen, setPreviousScreen] = useState<'search_home' | 'search_results' | 'explore' | 'profile'>('search_home');
   const [searchQuery, setSearchQuery] = useState('Ornek arama');
   const [activeDefaultTag, setActiveDefaultTag] = useState('');
+  const [userNickname, setUserNickname] = useState('enes');
+  const [savedMemeIds, setSavedMemeIds] = useState<string[]>(['1', '3', '6', '10']);
+
+  const handleToggleSaveMeme = (memeId: string) => {
+    setSavedMemeIds((prev) =>
+      prev.includes(memeId)
+        ? prev.filter((id) => id !== memeId)
+        : [memeId, ...prev]
+    );
+  };
 
   const handleStartSearch = (query: string) => {
     setSearchQuery(query);
@@ -73,19 +104,19 @@ export default function App() {
     } else if (tab === 'add') {
       handleOpenAddMeme();
     } else if (tab === 'explore') {
-      Alert.alert('Keşfet', 'Keşfet ekranı sıradaki güncellemede aktif edilecektir! 🚀');
+      setCurrentScreen('explore');
     } else if (tab === 'profile') {
-      Alert.alert('Profil', 'Kullanıcı profil ve meme koleksiyonu ekranı yakında burada olacak! 👤');
+      setCurrentScreen('profile');
     }
   };
 
   const handleAddNewMeme = (meme: MemeItem) => {
     MOCK_MEMES.unshift(meme);
     setSearchQuery(meme.tags[0] || meme.title);
-    setCurrentScreen('search_results');
+    setCurrentScreen('profile');
   };
 
-  if (!fontsLoaded && !fontError) {
+  if ((!fontsLoaded && !fontError) || !assetsLoaded) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FFE600" />
@@ -108,6 +139,27 @@ export default function App() {
               onAddMeme={handleAddNewMeme}
               onTabPress={handleTabPress}
               defaultTag={activeDefaultTag}
+              currentUserNickname={userNickname}
+            />
+          ) : currentScreen === 'explore' ? (
+            <ExploreScreen
+              onBackToHome={() => setCurrentScreen('search_home')}
+              onSearchTagOrQuery={handleStartSearch}
+              onOpenAddMeme={handleOpenAddMeme}
+              onTabPress={handleTabPress}
+              savedMemeIds={savedMemeIds}
+              onToggleSaveMeme={handleToggleSaveMeme}
+            />
+          ) : currentScreen === 'profile' ? (
+            <ProfileScreen
+              onBackToHome={() => setCurrentScreen('search_home')}
+              onSearchTagOrQuery={handleStartSearch}
+              onOpenAddMeme={handleOpenAddMeme}
+              onTabPress={handleTabPress}
+              userNickname={userNickname}
+              onUpdateNickname={setUserNickname}
+              savedMemeIds={savedMemeIds}
+              onToggleSaveMeme={handleToggleSaveMeme}
             />
           ) : (
             <SearchResultsScreen
@@ -115,6 +167,8 @@ export default function App() {
               onBackToHome={() => setCurrentScreen('search_home')}
               onOpenAddMeme={handleOpenAddMeme}
               onTabPress={handleTabPress}
+              savedMemeIds={savedMemeIds}
+              onToggleSaveMeme={handleToggleSaveMeme}
             />
           )}
         </View>

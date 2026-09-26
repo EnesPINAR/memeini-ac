@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Star } from 'lucide-react-native';
 import { CARTOON_COLORS } from './cartoon/CartoonUI';
@@ -18,6 +18,10 @@ export const StarRating: React.FC<StarRatingProps> = ({
 }) => {
   const [rating, setRating] = useState(initialRating);
   const [pressedStar, setPressedStar] = useState<number | null>(null);
+
+  useEffect(() => {
+    setRating(initialRating);
+  }, [initialRating]);
 
   const handlePress = (selectedStar: number) => {
     if (readOnly) return;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,8 @@ import {
   Check,
   Plus,
   Info,
+  Bookmark,
+  Star,
 } from 'lucide-react-native';
 import { ColorfulTitle } from '../components/ColorfulTitle';
 import { BottomNavBar, TabType } from '../components/BottomNavBar';
@@ -49,6 +51,8 @@ interface SearchResultsScreenProps {
   onBackToHome: () => void;
   onOpenAddMeme: (tag?: string) => void;
   onTabPress: (tab: TabType) => void;
+  savedMemeIds?: string[];
+  onToggleSaveMeme?: (memeId: string) => void;
 }
 
 const USERNAME_STROKE_OFFSETS = [
@@ -72,6 +76,8 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
   onBackToHome,
   onOpenAddMeme,
   onTabPress,
+  savedMemeIds = [],
+  onToggleSaveMeme,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -323,7 +329,35 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
           />
         </View>
 
-        {/* "En Uyumlu" Heading (Styled just like "Bu değil mi?") + Compact Meme Title */}
+        {/* If no exact meme matched the search query, show Yeni Meme Ekle card */}
+        {searchData.noExactMatch && (
+          <CartoonCard
+            borderRadius={20}
+            shadowOffset={4}
+            bgColor={CARTOON_COLORS.pastelYellow}
+            style={styles.noMatchBannerWrapper}
+            contentStyle={styles.noMatchBannerCard}
+          >
+            <Text style={styles.noMatchBannerTitle}>
+              &quot;{searchData.query}&quot; için henüz meme bulunamadı!
+            </Text>
+            <Text style={styles.noMatchBannerDesc}>
+              İlk ekleyen sen olmak ister misin?
+            </Text>
+            <CartoonButton
+              label="Yeni Meme Ekle"
+              onPress={() => onOpenAddMeme(searchData.query)}
+              bgColor={CARTOON_COLORS.green}
+              icon={<Plus size={16} color="#000000" strokeWidth={3} />}
+              borderRadius={16}
+              shadowSize={3}
+              style={styles.noMatchAddBtn}
+              faceStyle={styles.noMatchAddBtnFace}
+            />
+          </CartoonCard>
+        )}
+
+        {/* "En Uyumlu" Heading + Meme Title underneath with Right-Aligned Report Button */}
         <View style={styles.topSectionHeader}>
           <View style={styles.enUyumluTitleWrap}>
             <Text style={styles.questionText}>
@@ -332,13 +366,21 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
             <RoughCornerAccent width={100} height={10} color="#000000" />
           </View>
 
-          <Text
-            style={styles.compactMemeTitle}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {currentBest.title}
-          </Text>
+          <View style={styles.memeTitleAndReportRow}>
+            <Text style={styles.compactMemeTitle}>
+              {currentBest.title}
+            </Text>
+
+            <CartoonButton
+              onPress={handleOpenReportModal}
+              bgColor="#EF4444"
+              icon={<Flag size={16} color="#FFFFFF" strokeWidth={2.6} />}
+              borderRadius={14}
+              shadowSize={2.5}
+              style={styles.reportIconBtn}
+              faceStyle={styles.reportIconFace}
+            />
+          </View>
         </View>
 
         {/* Main Card: Tapping opens Full-Screen Popup (with 3D button hover/press physics & no gloss) */}
@@ -418,15 +460,30 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
           </View>
         </CartoonCard>
 
-        {/* Row under Card: 5 Cartoon Stars on Left + Red Report Icon & Paylaş Button on Right */}
+        {/* Row under Card: 5 Cartoon Stars on Left + Save & Paylaş Button on Right */}
         <View style={styles.cardFooter}>
           <StarRating initialRating={currentBest.rating} size={24} />
 
           <View style={styles.footerActionsGroup}>
             <CartoonButton
-              onPress={handleOpenReportModal}
-              bgColor="#EF4444"
-              icon={<Flag size={16} color="#FFFFFF" strokeWidth={2.6} />}
+              onPress={() => onToggleSaveMeme && onToggleSaveMeme(currentBest.id)}
+              bgColor={
+                savedMemeIds.includes(currentBest.id)
+                  ? CARTOON_COLORS.green
+                  : CARTOON_COLORS.yellow
+              }
+              icon={
+                <Bookmark
+                  size={16}
+                  color="#000000"
+                  fill={
+                    savedMemeIds.includes(currentBest.id)
+                      ? '#000000'
+                      : 'none'
+                  }
+                  strokeWidth={2.8}
+                />
+              }
               borderRadius={14}
               shadowSize={2.5}
               style={styles.reportIconBtn}
@@ -495,37 +552,89 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
           />
         </View>
 
-        {/* 2x2 Grid of Alternative Memes (Cartoon 3D Cards with Button Hover/Press Effect & No Gloss) */}
-        <View style={styles.altGrid}>
-          {alternatives.slice(0, 4).map((altMeme, index) => (
-            <CartoonCard
-              key={altMeme.id + '-' + index}
-              onPress={() => handleSelectAlternative(altMeme, index)}
-              borderRadius={18}
-              shadowOffset={4}
-              showGloss={false}
-              style={styles.altCardWrapper}
-              contentStyle={styles.altCardInner}
-            >
-              {altMeme.imageUrl ? (
-                <Image
-                  source={{ uri: altMeme.imageUrl }}
-                  style={styles.altCardImage}
-                  resizeMode="cover"
-                />
-              ) : null}
-              <View style={styles.altCardCaptionOverlay} pointerEvents="none">
-                <Text
-                  style={[styles.altCardOverlayText, styles.altCardOverlayStroke]}
-                  numberOfLines={1}
-                >
-                  {altMeme.title || 'Alternatif Meme'}
-                </Text>
-                <Text style={styles.altCardOverlayText} numberOfLines={1}>
-                  {altMeme.title || 'Alternatif Meme'}
-                </Text>
-              </View>
-            </CartoonCard>
+        {/* 2-Column Pinterest Masonry Grid of Alternative Memes (Identical to ExploreScreen design) */}
+        <View style={styles.masonryContainer}>
+          {[0, 1].map((colIdx) => (
+            <View key={`alt-col-${colIdx}`} style={styles.masonryColumn}>
+              {alternatives
+                .slice(0, 4)
+                .map((item, idx) => ({ item, idx }))
+                .filter((_, i) => i % 2 === colIdx)
+                .map(({ item: altMeme, idx: originalIndex }) => {
+                  const ratio = altMeme.aspectRatio || (originalIndex % 2 === 0 ? 0.75 : 1.1);
+                  const clampedRatio = Math.max(0.58, Math.min(1.4, ratio));
+                  const colW = Math.floor((Math.min(windowWidth - 36, 360) - 12) / 2);
+                  const cardHeight = Math.max(125, Math.min(260, Math.round(colW / clampedRatio)));
+                  const formattedAvg = Number(altMeme.rating || 4.5)
+                    .toFixed(1)
+                    .replace('.', ',');
+                  const itemUploader = `@${altMeme.uploaderNickname || 'anonim'}`;
+
+                  return (
+                    <View
+                      key={`${altMeme.id}-${originalIndex}`}
+                      style={styles.pinItemContainer}
+                    >
+                      <CartoonCard
+                        onPress={() => handleSelectAlternative(altMeme, originalIndex)}
+                        borderRadius={20}
+                        shadowOffset={4}
+                        showGloss={false}
+                        style={[styles.pinCardWrapper, { height: cardHeight }]}
+                        contentStyle={[styles.pinCardInner, { height: cardHeight }]}
+                      >
+                        {altMeme.imageUrl ? (
+                          <Image
+                            source={{ uri: altMeme.imageUrl }}
+                            style={[styles.pinCardImage, { height: cardHeight }]}
+                            resizeMode="cover"
+                          />
+                        ) : null}
+
+                        {/* Top Right Uploader Handle on Pin */}
+                        <View style={styles.pinTopRightUploader} pointerEvents="none">
+                          <Text
+                            numberOfLines={1}
+                            style={[styles.pinUploaderText, styles.pinUploaderStroke]}
+                          >
+                            {itemUploader}
+                          </Text>
+                          <Text numberOfLines={1} style={styles.pinUploaderText}>
+                            {itemUploader}
+                          </Text>
+                        </View>
+
+                        {/* Bottom Left Small Average Rating ("4,5 ★") without covering the meme */}
+                        <View style={styles.pinBottomLeftRating} pointerEvents="none">
+                          <View style={styles.pinRatingTextWrap}>
+                            <Text style={[styles.pinRatingText, styles.pinRatingStroke]}>
+                              {formattedAvg}
+                            </Text>
+                            <Text style={styles.pinRatingText}>{formattedAvg}</Text>
+                          </View>
+                          <Star
+                            size={11}
+                            color="#000000"
+                            fill={CARTOON_COLORS.yellow}
+                            strokeWidth={2.4}
+                          />
+                        </View>
+                      </CartoonCard>
+
+                      {/* Clean Single-Line Caption Footer (no three dots on the right) */}
+                      <View style={styles.pinFooterBlock}>
+                        <Pressable
+                          onPress={() => handleSelectAlternative(altMeme, originalIndex)}
+                        >
+                          <Text style={styles.pinTitleText} numberOfLines={1}>
+                            {altMeme.title || 'Alternatif Meme'}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  );
+                })}
+            </View>
           ))}
         </View>
       </ScrollView>
@@ -637,6 +746,31 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
 
             <View style={styles.fullscreenActionRow}>
               <CartoonButton
+                onPress={() => onToggleSaveMeme && onToggleSaveMeme(currentBest.id)}
+                bgColor={
+                  savedMemeIds.includes(currentBest.id)
+                    ? CARTOON_COLORS.green
+                    : CARTOON_COLORS.yellow
+                }
+                icon={
+                  <Bookmark
+                    size={18}
+                    color="#000000"
+                    fill={
+                      savedMemeIds.includes(currentBest.id)
+                        ? '#000000'
+                        : 'none'
+                    }
+                    strokeWidth={2.8}
+                  />
+                }
+                borderRadius={16}
+                shadowSize={2.5}
+                style={styles.fullscreenReportBtn}
+                faceStyle={styles.fullscreenReportFace}
+              />
+
+              <CartoonButton
                 onPress={handleOpenReportModal}
                 bgColor="#EF4444"
                 icon={<Flag size={18} color="#FFFFFF" strokeWidth={2.6} />}
@@ -695,7 +829,12 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
                     <CartoonCornerGloss size="xs" top={1.5} left={2} />
                     <Flag size={16} color="#FFFFFF" strokeWidth={2.8} />
                   </View>
-                  <Text style={styles.reportModalTitle}>Meme&apos;i Raporla</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reportModalTitle}>Meme&apos;i Bildir</Text>
+                    <Text style={styles.reportModalSubtitle} numberOfLines={1}>
+                      {currentBest.title}
+                    </Text>
+                  </View>
                 </View>
 
                 <Pressable
@@ -1014,24 +1153,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   topSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     width: '100%',
     maxWidth: 360,
-    marginBottom: 8,
+    marginBottom: 10,
     paddingHorizontal: 4,
-    gap: 10,
+    gap: 6,
   },
   enUyumluTitleWrap: {
-    flexShrink: 0,
+    alignSelf: 'flex-start',
+  },
+  memeTitleAndReportRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
   },
   compactMemeTitle: {
     flex: 1,
-    ...CARTOON_FONTS.bold,
-    fontSize: 14,
-    color: '#334155',
-    textAlign: 'right',
+    ...CARTOON_FONTS.extraBold,
+    fontSize: 16.5,
+    lineHeight: 21,
+    color: '#0F172A',
+    textAlign: 'left',
   },
   mainCardWrapper: {
     width: '100%',
@@ -1174,6 +1320,86 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     rowGap: 16,
+  },
+  masonryContainer: {
+    width: '100%',
+    maxWidth: 360,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  masonryColumn: {
+    width: '48.2%',
+    flexDirection: 'column',
+  },
+  pinItemContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  pinCardWrapper: {
+    width: '100%',
+  },
+  pinCardInner: {
+    width: '100%',
+    backgroundColor: '#0F172A',
+  },
+  pinCardImage: {
+    width: '100%',
+  },
+  pinTopRightUploader: {
+    position: 'absolute',
+    top: 7,
+    right: 9,
+    maxWidth: '82%',
+  },
+  pinUploaderText: {
+    ...CARTOON_FONTS.extraBold,
+    fontSize: 10.5,
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  pinUploaderStroke: {
+    position: 'absolute',
+    top: 1,
+    left: 1,
+    color: '#000000',
+  },
+  pinBottomLeftRating: {
+    position: 'absolute',
+    bottom: 7,
+    left: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'transparent',
+  },
+  pinRatingTextWrap: {
+    position: 'relative',
+  },
+  pinRatingText: {
+    ...CARTOON_FONTS.extraBold,
+    fontSize: 11.5,
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 2.5,
+  },
+  pinRatingStroke: {
+    position: 'absolute',
+    top: 1,
+    left: 1,
+    color: '#000000',
+  },
+  pinFooterBlock: {
+    marginTop: 6,
+    paddingHorizontal: 3,
+  },
+  pinTitleText: {
+    ...CARTOON_FONTS.extraBold,
+    fontSize: 12.5,
+    color: '#0F172A',
   },
   altCardWrapper: {
     width: '47.5%',
@@ -1356,6 +1582,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   reportHeaderTitleGroup: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1374,6 +1601,48 @@ const styles = StyleSheet.create({
     ...CARTOON_FONTS.extraBold,
     fontSize: 20,
     color: '#000000',
+    lineHeight: 23,
+  },
+  reportModalSubtitle: {
+    ...CARTOON_FONTS.bold,
+    fontSize: 12.5,
+    color: '#475569',
+    marginTop: 1,
+  },
+  noMatchBannerWrapper: {
+    width: '100%',
+    maxWidth: 360,
+    marginBottom: 14,
+  },
+  noMatchBannerCard: {
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 20,
+    alignItems: 'center',
+  },
+  noMatchBannerTitle: {
+    ...CARTOON_FONTS.extraBold,
+    fontSize: 16,
+    color: '#000000',
+    textAlign: 'center',
+  },
+  noMatchBannerDesc: {
+    ...CARTOON_FONTS.semiBold,
+    fontSize: 13,
+    color: '#334155',
+    textAlign: 'center',
+    marginTop: 3,
+    marginBottom: 10,
+  },
+  noMatchAddBtn: {
+    alignSelf: 'center',
+    marginBottom: 4,
+  },
+  noMatchAddBtnFace: {
+    height: 40,
+    paddingVertical: 0,
+    paddingHorizontal: 16,
+    borderWidth: 2.5,
   },
   reportCloseBtn: {
     width: 32,
