@@ -39,7 +39,8 @@
           "cameraPermission": "Anlık meme fotoğrafı veya videosu çekebilmek için kamera erişimi gerekiyor."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

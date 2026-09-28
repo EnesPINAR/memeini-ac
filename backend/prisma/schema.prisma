@@ -1,0 +1,190 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum MemeStatus {
+  ACTIVE
+  PENDING_DELETE
+  DELETED
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                   String              @id @default(uuid())
+  email                String              @unique
+  passwordHash         String
+  username             String              @unique
+  displayName          String
+  bio                  String              @default("Her duruma uygun bir meme mutlaka vardır 🎯")
+  avatarEmoji          String              @default("🐹")
+  avatarBg             String              @default("#FFE600")
+  role                 Role                @default(USER)
+  notificationsEnabled Boolean             @default(true)
+  refreshTokenHash     String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  memes                Meme[]              @relation("UserMemes")
+  ratings              Rating[]            @relation("UserRatings")
+  savedMemes           SavedMeme[]         @relation("UserSavedMemes")
+  reports              Report[]            @relation("UserReports")
+  deleteRequests       MemeDeleteRequest[] @relation("UserDeleteRequests")
+  suggestedTags        SuggestedTag[]      @relation("UserSuggestedTags")
+
+  @@map("users")
+}
+
+model Meme {
+  id             String              @id @default(uuid())
+  title          String
+  mediaUrl       String
+  mediaType      MediaType           @default(IMAGE)
+  aspectRatio    Float               @default(1.0)
+  uploaderId     String
+  rating         Float               @default(0.0)
+  ratingCount    Int                 @default(0)
+  status         MemeStatus          @default(ACTIVE)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  uploader       User                @relation("UserMemes", fields: [uploaderId], references: [id], onDelete: Cascade)
+  tags           MemeTag[]
+  ratings        Rating[]
+  savedBy        SavedMeme[]
+  reports        Report[]
+  deleteRequests MemeDeleteRequest[]
+  suggestedTags  SuggestedTag[]
+
+  @@index([status, rating(sort: Desc)])
+  @@index([uploaderId])
+  @@map("memes")
+}
+
+model Tag {
+  id    String    @id @default(uuid())
+  name  String    @unique
+  memes MemeTag[]
+
+  @@map("tags")
+}
+
+model MemeTag {
+  memeId String
+  tagId  String
+
+  meme   Meme @relation(fields: [memeId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([memeId, tagId])
+  @@index([tagId])
+  @@index([memeId])
+  @@map("meme_tags")
+}
+
+model Rating {
+  id        String   @id @default(uuid())
+  userId    String
+  memeId    String
+  score     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation("UserRatings", fields: [userId], references: [id], onDelete: Cascade)
+  meme      Meme     @relation(fields: [memeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, memeId])
+  @@index([memeId])
+  @@map("ratings")
+}
+
+model SavedMeme {
+  userId    String
+  memeId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation("UserSavedMemes", fields: [userId], references: [id], onDelete: Cascade)
+  meme      Meme     @relation(fields: [memeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, memeId])
+  @@index([userId])
+  @@map("saved_memes")
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  memeId      String
+  reporterId  String
+  reason      String
+  description String?
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  meme        Meme         @relation(fields: [memeId], references: [id], onDelete: Cascade)
+  reporter    User         @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([memeId])
+  @@index([status])
+  @@map("reports")
+}
+
+model MemeDeleteRequest {
+  id        String        @id @default(uuid())
+  memeId    String
+  userId    String
+  reason    String
+  note      String?
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  meme      Meme          @relation(fields: [memeId], references: [id], onDelete: Cascade)
+  user      User          @relation("UserDeleteRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([memeId])
+  @@index([status])
+  @@map("meme_delete_requests")
+}
+
+model SuggestedTag {
+  id        String        @id @default(uuid())
+  memeId    String
+  userId    String
+  tagName   String
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  meme      Meme          @relation(fields: [memeId], references: [id], onDelete: Cascade)
+  user      User          @relation("UserSuggestedTags", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([memeId])
+  @@index([status])
+  @@map("suggested_tags")
+}

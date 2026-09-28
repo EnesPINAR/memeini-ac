@@ -1,27 +1,31 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import { Search, PlusCircle, Compass, UserCircle } from 'lucide-react-native';
+import { Search, PlusCircle, Compass, UserCircle, ShieldAlert } from 'lucide-react-native';
 import { CARTOON_COLORS, CartoonCornerGloss } from './cartoon/CartoonUI';
 
-export type TabType = 'search' | 'add' | 'explore' | 'profile';
+export type TabType = 'search' | 'add' | 'explore' | 'profile' | 'admin_manage';
 
 interface BottomNavBarProps {
   activeTab?: TabType;
   onTabPress: (tab: TabType) => void;
+  isAdmin?: boolean;
 }
-
-const TAB_ITEMS: { id: TabType; color: string; Icon: any }[] = [
-  { id: 'search', color: CARTOON_COLORS.yellow, Icon: Search },
-  { id: 'add', color: CARTOON_COLORS.green, Icon: PlusCircle },
-  { id: 'explore', color: CARTOON_COLORS.cyan, Icon: Compass },
-  { id: 'profile', color: CARTOON_COLORS.pink, Icon: UserCircle },
-];
 
 export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   activeTab = 'search',
   onTabPress,
+  isAdmin = false,
 }) => {
   const [pressedTab, setPressedTab] = useState<TabType | null>(null);
+
+  const tabItems = [
+    { id: 'search' as TabType, color: CARTOON_COLORS.yellow, Icon: Search },
+    isAdmin
+      ? { id: 'admin_manage' as TabType, color: CARTOON_COLORS.orange, Icon: ShieldAlert }
+      : { id: 'add' as TabType, color: CARTOON_COLORS.green, Icon: PlusCircle },
+    { id: 'explore' as TabType, color: CARTOON_COLORS.cyan, Icon: Compass },
+    { id: 'profile' as TabType, color: CARTOON_COLORS.pink, Icon: UserCircle },
+  ];
 
   return (
     <View style={styles.container}>
@@ -32,7 +36,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
         {/* Main Cartoon Capsule Nav Bar */}
         <View style={styles.pillBar}>
           <CartoonCornerGloss size="lg" top={4} left={8} />
-          {TAB_ITEMS.map(({ id, color, Icon }) => {
+          {tabItems.map(({ id, color, Icon }) => {
             const isActive = activeTab === id;
             const isPressed = pressedTab === id;
 

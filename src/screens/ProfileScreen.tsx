@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
   Animated,
   PanResponder,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Polygon, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
@@ -31,13 +32,16 @@ import {
   Bookmark,
   Edit3,
   Trash2,
-  UploadCloud,
   Clock,
   Settings,
   Lock,
   Bell,
   Mail,
   LogOut,
+  ShieldAlert,
+  Tag,
+  CheckCircle2,
+  User,
 } from 'lucide-react-native';
 import { ColorfulTitle } from '../components/ColorfulTitle';
 import { StarRating } from '../components/StarRating';
@@ -53,6 +57,8 @@ import {
 import { MOCK_MEMES } from '../data/mockMemes';
 import { MemeItem } from '../types/meme';
 
+import { UserProfile, adminApi, AdminHistory } from '../services/api';
+
 interface ProfileScreenProps {
   onBackToHome: () => void;
   onSearchTagOrQuery: (query: string) => void;
@@ -62,6 +68,8 @@ interface ProfileScreenProps {
   onUpdateNickname: (newNickname: string) => void;
   savedMemeIds: string[];
   onToggleSaveMeme: (memeId: string) => void;
+  onLogout?: () => void;
+  currentUser?: UserProfile | null;
 }
 
 type ProfileCollectionTab = 'uploaded' | 'starred' | 'saved';
@@ -141,6 +149,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onUpdateNickname,
   savedMemeIds,
   onToggleSaveMeme,
+  onLogout,
+  currentUser,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -148,12 +158,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     Platform.OS === 'web' && windowWidth > 500 ? 48 : Math.max(insets.top, 20);
 
   // User Profile Identity State
-  const [displayName, setDisplayName] = useState('Enes Pınar');
+  const [displayName, setDisplayName] = useState(currentUser?.displayName || 'Enes Pınar');
   const [bioText, setBioText] = useState(
-    'Her duruma uygun bir meme mutlaka vardır 🎯 Favori meme koleksiyonum ve kendi yüklediklerim.'
+    currentUser?.bio || 'Her duruma uygun bir meme mutlaka vardır 🎯 Favori meme koleksiyonum ve kendi yüklediklerim.'
   );
-  const [avatarEmoji, setAvatarEmoji] = useState('🐹');
-  const [avatarBg, setAvatarBg] = useState(CARTOON_COLORS.yellow);
+  const [avatarEmoji, setAvatarEmoji] = useState(currentUser?.avatarEmoji || '🐹');
+  const [avatarBg, setAvatarBg] = useState(currentUser?.avatarBg || CARTOON_COLORS.yellow);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.displayName) setDisplayName(currentUser.displayName);
+      if (currentUser.bio) setBioText(currentUser.bio);
+      if (currentUser.avatarEmoji) setAvatarEmoji(currentUser.avatarEmoji);
+      if (currentUser.avatarBg) setAvatarBg(currentUser.avatarBg);
+    }
+  }, [currentUser]);
 
   // Edit Profile Modal State
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -173,9 +192,60 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+  const isAdmin = currentUser?.role === 'ADMIN';
+
+  type AdminCollectionTab = 'approved_memes' | 'deleted_memes' | 'added_tags' | 'reports_history';
+  const ADMIN_TAB_ORDER: AdminCollectionTab[] = [
+    'approved_memes',
+    'deleted_memes',
+    'added_tags',
+    'reports_history',
+  ];
+
   // Active Collection Tab ('uploaded' | 'starred' | 'saved')
   const [activeCollectionTab, setActiveCollectionTab] =
     useState<ProfileCollectionTab>('uploaded');
+  const [activeAdminTab, setActiveAdminTab] =
+    useState<AdminCollectionTab>('approved_memes');
+
+  // Admin History State
+  const [adminHistory, setAdminHistory] = useState<AdminHistory | null>(null);
+  const [isLoadingAdminHistory, setIsLoadingAdminHistory] = useState(false);
+
+  const fetchAdminHistory = useCallback(async () => {
+    if (!isAdmin) return;
+    setIsLoadingAdminHistory(true);
+    try {
+      const data = await adminApi.getHistory();
+      setAdminHistory(data);
+    } catch (err) {
+      console.warn('Admin history fetch error:', err);
+    } finally {
+      setIsLoadingAdminHistory(false);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAdminHistory();
+    }
+  }, [isAdmin, fetchAdminHistory]);
+
+  const formatActionDateTime = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleDateString('tr-TR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return isoString;
+    }
+  };
 
   // Page ScrollView scrollEnabled flag (locked during tabspicker drag to prevent vertical scroll)
   const [pageScrollEnabled, setPageScrollEnabled] = useState(true);
@@ -183,18 +253,23 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   // SwiftUI TabsPickerStyle animated thumb & drag gesture navigation
   const TAB_ORDER: ProfileCollectionTab[] = ['uploaded', 'starred', 'saved'];
   const tabAnim = useRef(new Animated.Value(0)).current;
-  const activeTabRef = useRef<ProfileCollectionTab>('uploaded');
-  const touchDownTabRef = useRef<ProfileCollectionTab>('uploaded');
+  const activeTabRef = useRef<string>(isAdmin ? 'approved_memes' : 'uploaded');
+  const touchDownTabRef = useRef<string>(isAdmin ? 'approved_memes' : 'uploaded');
   const dragStartIdxRef = useRef(0);
   const [segmentsWidth, setSegmentsWidth] = useState(0);
   const segmentsWidthRef = useRef(0);
 
-  const switchCollectionTab = (nextTab: ProfileCollectionTab) => {
-    const targetIdx = TAB_ORDER.indexOf(nextTab);
+  const switchCollectionTab = (nextTab: string) => {
+    const order: string[] = isAdmin ? ADMIN_TAB_ORDER : TAB_ORDER;
+    const targetIdx = order.indexOf(nextTab);
     if (targetIdx === -1) return;
     activeTabRef.current = nextTab;
     touchDownTabRef.current = nextTab;
-    setActiveCollectionTab(nextTab);
+    if (isAdmin) {
+      setActiveAdminTab(nextTab as AdminCollectionTab);
+    } else {
+      setActiveCollectionTab(nextTab as ProfileCollectionTab);
+    }
     setSelectedTags([]);
     Animated.spring(tabAnim, {
       toValue: targetIdx,
@@ -220,38 +295,47 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         onShouldBlockNativeResponder: () => true,
         onPanResponderGrant: () => {
           setPageScrollEnabled(false);
+          const order: string[] = isAdmin ? ADMIN_TAB_ORDER : TAB_ORDER;
           const startTab = touchDownTabRef.current || activeTabRef.current;
-          const startIdx = TAB_ORDER.indexOf(startTab);
+          const startIdx = order.indexOf(startTab);
           dragStartIdxRef.current = startIdx >= 0 ? startIdx : 0;
           tabAnim.stopAnimation();
           tabAnim.setValue(dragStartIdxRef.current);
           if (startTab !== activeTabRef.current) {
             activeTabRef.current = startTab;
-            setActiveCollectionTab(startTab);
+            if (isAdmin) {
+              setActiveAdminTab(startTab as AdminCollectionTab);
+            } else {
+              setActiveCollectionTab(startTab as ProfileCollectionTab);
+            }
           }
         },
         onPanResponderMove: (_, gestureState) => {
           const totalW = segmentsWidthRef.current || 300;
-          const segW = totalW / 3;
+          const count = isAdmin ? 4 : 3;
+          const segW = totalW / count;
           const currentIdx = dragStartIdxRef.current + gestureState.dx / segW;
-          const clampedIdx = Math.max(0, Math.min(2, currentIdx));
+          const clampedIdx = Math.max(0, Math.min(count - 1, currentIdx));
           tabAnim.setValue(clampedIdx);
         },
         onPanResponderRelease: (_, gestureState) => {
           setPageScrollEnabled(true);
           const totalW = segmentsWidthRef.current || 300;
-          const segW = totalW / 3;
+          const count = isAdmin ? 4 : 3;
+          const segW = totalW / count;
           const rawIdx = dragStartIdxRef.current + gestureState.dx / segW;
-          const snappedIdx = Math.round(Math.max(0, Math.min(2, rawIdx)));
-          switchCollectionTab(TAB_ORDER[snappedIdx]);
+          const snappedIdx = Math.round(Math.max(0, Math.min(count - 1, rawIdx)));
+          const order: string[] = isAdmin ? ADMIN_TAB_ORDER : TAB_ORDER;
+          switchCollectionTab(order[snappedIdx]);
         },
         onPanResponderTerminate: () => {
           setPageScrollEnabled(true);
-          const currentIdx = TAB_ORDER.indexOf(activeTabRef.current);
-          switchCollectionTab(TAB_ORDER[currentIdx]);
+          const order: string[] = isAdmin ? ADMIN_TAB_ORDER : TAB_ORDER;
+          const currentIdx = order.indexOf(activeTabRef.current);
+          switchCollectionTab(order[currentIdx >= 0 ? currentIdx : 0]);
         },
       }),
-    []
+    [isAdmin]
   );
 
   // Multi-select tag filters in profile
@@ -767,8 +851,16 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <Text style={styles.profileDisplayName} numberOfLines={1}>
                 {displayName}
               </Text>
-              <View style={styles.handlePill}>
-                <Text style={styles.handlePillText}>@{userNickname}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <View style={styles.handlePill}>
+                  <Text style={styles.handlePillText}>@{userNickname}</Text>
+                </View>
+                {isAdmin && (
+                  <View style={styles.adminRolePill}>
+                    <ShieldAlert size={12} color="#FFFFFF" strokeWidth={2.6} />
+                    <Text style={styles.adminRolePillText}>YÖNETİCİ</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.profileBioText} numberOfLines={3}>
                 {bioText}
@@ -795,18 +887,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   style={[
                     styles.tabsPickerActiveThumb,
                     {
-                      width: segmentsWidth / 3,
-                      backgroundColor:
-                        activeCollectionTab === 'uploaded'
-                          ? CARTOON_COLORS.yellow
-                          : activeCollectionTab === 'starred'
+                      width: segmentsWidth / (isAdmin ? 4 : 3),
+                      backgroundColor: isAdmin
+                        ? activeAdminTab === 'approved_memes'
+                          ? CARTOON_COLORS.green
+                          : activeAdminTab === 'deleted_memes'
+                          ? '#F87171'
+                          : activeAdminTab === 'added_tags'
                           ? CARTOON_COLORS.cyan
-                          : CARTOON_COLORS.green,
+                          : CARTOON_COLORS.orange
+                        : activeCollectionTab === 'uploaded'
+                        ? CARTOON_COLORS.yellow
+                        : activeCollectionTab === 'starred'
+                        ? CARTOON_COLORS.cyan
+                        : CARTOON_COLORS.green,
                       transform: [
                         {
                           translateX: tabAnim.interpolate({
-                            inputRange: [0, 2],
-                            outputRange: [0, (segmentsWidth / 3) * 2],
+                            inputRange: isAdmin ? [0, 1, 2, 3] : [0, 1, 2],
+                            outputRange: isAdmin
+                              ? [
+                                  0,
+                                  segmentsWidth / 4,
+                                  (segmentsWidth / 4) * 2,
+                                  (segmentsWidth / 4) * 3,
+                                ]
+                              : [0, segmentsWidth / 3, (segmentsWidth / 3) * 2],
                             extrapolate: 'clamp',
                           }),
                         },
@@ -816,111 +922,239 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 />
               )}
 
-              <Pressable
-                onPress={() => switchCollectionTab('uploaded')}
-                onPressIn={() => {
-                  touchDownTabRef.current = 'uploaded';
-                }}
-                style={styles.tabsPickerSegment}
-              >
-                <Text
-                  style={[
-                    styles.tabsPickerCountText,
-                    activeCollectionTab === 'uploaded' &&
-                      styles.tabsPickerCountActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {uploadedMemes.length}
-                </Text>
-                <Text
-                  style={[
-                    styles.tabsPickerLabelText,
-                    activeCollectionTab === 'uploaded' &&
-                      styles.tabsPickerLabelActive,
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  Eklediğim
-                </Text>
-              </Pressable>
+              {isAdmin ? (
+                <>
+                  <Pressable
+                    onPress={() => switchCollectionTab('approved_memes')}
+                    onPressIn={() => {
+                      touchDownTabRef.current = 'approved_memes';
+                    }}
+                    style={styles.tabsPickerSegment}
+                  >
+                    <Text
+                      style={[
+                        styles.tabsPickerCountText,
+                        activeAdminTab === 'approved_memes' && styles.tabsPickerCountActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {adminHistory?.approvedMemes?.length || 0} ✓
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tabsPickerLabelText,
+                        activeAdminTab === 'approved_memes' && styles.tabsPickerLabelActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Onaylanan
+                    </Text>
+                  </Pressable>
 
-              <Pressable
-                onPress={() => switchCollectionTab('starred')}
-                onPressIn={() => {
-                  touchDownTabRef.current = 'starred';
-                }}
-                style={styles.tabsPickerSegment}
-              >
-                <Text
-                  style={[
-                    styles.tabsPickerCountText,
-                    activeCollectionTab === 'starred' &&
-                      styles.tabsPickerCountActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {starredMemes.length} ★
-                </Text>
-                <Text
-                  style={[
-                    styles.tabsPickerLabelText,
-                    activeCollectionTab === 'starred' &&
-                      styles.tabsPickerLabelActive,
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  Yıldızlanan
-                </Text>
-              </Pressable>
+                  <Pressable
+                    onPress={() => switchCollectionTab('deleted_memes')}
+                    onPressIn={() => {
+                      touchDownTabRef.current = 'deleted_memes';
+                    }}
+                    style={styles.tabsPickerSegment}
+                  >
+                    <Text
+                      style={[
+                        styles.tabsPickerCountText,
+                        activeAdminTab === 'deleted_memes' && styles.tabsPickerCountActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {adminHistory?.deletedMemes?.length || 0} 🗑
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tabsPickerLabelText,
+                        activeAdminTab === 'deleted_memes' && styles.tabsPickerLabelActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Silinen
+                    </Text>
+                  </Pressable>
 
-              <Pressable
-                onPress={() => switchCollectionTab('saved')}
-                onPressIn={() => {
-                  touchDownTabRef.current = 'saved';
-                }}
-                style={styles.tabsPickerSegment}
-              >
-                <Text
-                  style={[
-                    styles.tabsPickerCountText,
-                    activeCollectionTab === 'saved' &&
-                      styles.tabsPickerCountActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {savedMemes.length} 📌
-                </Text>
-                <Text
-                  style={[
-                    styles.tabsPickerLabelText,
-                    activeCollectionTab === 'saved' &&
-                      styles.tabsPickerLabelActive,
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  Kaydedilme
-                </Text>
-              </Pressable>
+                  <Pressable
+                    onPress={() => switchCollectionTab('added_tags')}
+                    onPressIn={() => {
+                      touchDownTabRef.current = 'added_tags';
+                    }}
+                    style={styles.tabsPickerSegment}
+                  >
+                    <Text
+                      style={[
+                        styles.tabsPickerCountText,
+                        activeAdminTab === 'added_tags' && styles.tabsPickerCountActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {adminHistory?.addedTags?.length || 0} 🏷
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tabsPickerLabelText,
+                        activeAdminTab === 'added_tags' && styles.tabsPickerLabelActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Etiket
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => switchCollectionTab('reports_history')}
+                    onPressIn={() => {
+                      touchDownTabRef.current = 'reports_history';
+                    }}
+                    style={styles.tabsPickerSegment}
+                  >
+                    <Text
+                      style={[
+                        styles.tabsPickerCountText,
+                        activeAdminTab === 'reports_history' && styles.tabsPickerCountActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {adminHistory?.reportsHistory?.length || 0} 🚩
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tabsPickerLabelText,
+                        activeAdminTab === 'reports_history' && styles.tabsPickerLabelActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      Rapor
+                    </Text>
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <Pressable
+                    onPress={() => switchCollectionTab('uploaded')}
+                    onPressIn={() => {
+                      touchDownTabRef.current = 'uploaded';
+                    }}
+                    style={styles.tabsPickerSegment}
+                  >
+                    <Text
+                      style={[
+                        styles.tabsPickerCountText,
+                        activeCollectionTab === 'uploaded' &&
+                          styles.tabsPickerCountActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {uploadedMemes.length}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tabsPickerLabelText,
+                        activeCollectionTab === 'uploaded' &&
+                          styles.tabsPickerLabelActive,
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      Eklediğim
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => switchCollectionTab('starred')}
+                    onPressIn={() => {
+                      touchDownTabRef.current = 'starred';
+                    }}
+                    style={styles.tabsPickerSegment}
+                  >
+                    <Text
+                      style={[
+                        styles.tabsPickerCountText,
+                        activeCollectionTab === 'starred' &&
+                          styles.tabsPickerCountActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {starredMemes.length} ★
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tabsPickerLabelText,
+                        activeCollectionTab === 'starred' &&
+                          styles.tabsPickerLabelActive,
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      Yıldızlanan
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => switchCollectionTab('saved')}
+                    onPressIn={() => {
+                      touchDownTabRef.current = 'saved';
+                    }}
+                    style={styles.tabsPickerSegment}
+                  >
+                    <Text
+                      style={[
+                        styles.tabsPickerCountText,
+                        activeCollectionTab === 'saved' &&
+                          styles.tabsPickerCountActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {savedMemes.length} 📌
+                    </Text>
+                    <Text
+                      style={[
+                        styles.tabsPickerLabelText,
+                        activeCollectionTab === 'saved' &&
+                          styles.tabsPickerLabelActive,
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      Kaydedilme
+                    </Text>
+                  </Pressable>
+                </>
+              )}
             </View>
           </View>
 
           {/* Quick Actions inside Profile Card */}
           <View style={styles.profileQuickActionsRow}>
-            <CartoonButton
-              label="Yeni Meme Ekle"
-              onPress={() => onOpenAddMeme()}
-              bgColor={CARTOON_COLORS.green}
-              icon={<Plus size={15} color="#000000" strokeWidth={3.2} />}
-              borderRadius={16}
-              shadowSize={3}
-              style={styles.profileAddMemeBtn}
-              faceStyle={styles.profileActionFace}
-              textStyle={styles.profileActionBtnText}
-            />
+            {isAdmin ? (
+              <CartoonButton
+                label="Meme Yönetimi"
+                onPress={() => onTabPress('admin_manage')}
+                bgColor={CARTOON_COLORS.orange}
+                icon={<ShieldAlert size={15} color="#000000" strokeWidth={3.2} />}
+                borderRadius={16}
+                shadowSize={3}
+                style={styles.profileAddMemeBtn}
+                faceStyle={styles.profileActionFace}
+                textStyle={styles.profileActionBtnText}
+              />
+            ) : (
+              <CartoonButton
+                label="Yeni Meme Ekle"
+                onPress={() => onOpenAddMeme()}
+                bgColor={CARTOON_COLORS.green}
+                icon={<Plus size={15} color="#000000" strokeWidth={3.2} />}
+                borderRadius={16}
+                shadowSize={3}
+                style={styles.profileAddMemeBtn}
+                faceStyle={styles.profileActionFace}
+                textStyle={styles.profileActionBtnText}
+              />
+            )}
 
             <CartoonButton
               label="Profili Düzenle"
@@ -936,98 +1170,335 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
         </CartoonCard>
 
-        {/* Multi-Select #etiket Filter Bar for the Active Collection */}
-        {orderedCollectionTags.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.memeTagsScroll}
-            contentContainerStyle={styles.memeTagsContainer}
-          >
-            {selectedTags.length > 0 && (
-              <Pressable
-                onPress={() => setSelectedTags([])}
-                style={styles.activeTagClearChip}
+        {/* ADMIN HISTORY FEED (When User is Admin) OR USER COLLECTION GRID */}
+        {isAdmin ? (
+          <View style={styles.adminHistoryContainer}>
+            {isLoadingAdminHistory ? (
+              <View style={styles.adminHistoryLoading}>
+                <ActivityIndicator size="large" color={CARTOON_COLORS.orange} />
+                <Text style={styles.adminHistoryLoadingText}>İşlem geçmişi yükleniyor...</Text>
+              </View>
+            ) : activeAdminTab === 'approved_memes' ? (
+              /* ================= ONAYLANAN MEMELER GEÇMİŞİ ================= */
+              (!adminHistory?.approvedMemes || adminHistory.approvedMemes.length === 0) ? (
+                <CartoonCard
+                  borderRadius={20}
+                  shadowOffset={4}
+                  bgColor={CARTOON_COLORS.pastelYellow}
+                  style={styles.emptyStateWrapper}
+                  contentStyle={styles.emptyStateCard}
+                >
+                  <Text style={styles.emptyStateTitle}>Henüz Onaylanan Meme Yok!</Text>
+                  <Text style={styles.emptyStateDesc}>Onaylanan tüm memeler işlem tarihiyle birlikte burada tutulur.</Text>
+                </CartoonCard>
+              ) : (
+                adminHistory.approvedMemes.map((m) => (
+                  <CartoonCard
+                    key={m.id}
+                    borderRadius={20}
+                    shadowOffset={4}
+                    bgColor="#FFFFFF"
+                    style={styles.historyCardWrapper}
+                    contentStyle={styles.historyCardContent}
+                  >
+                    <View style={styles.historyRow}>
+                      <Image source={{ uri: m.mediaUrl }} style={styles.historyThumb as any} />
+                      <View style={styles.historyInfo}>
+                        <View style={styles.historyBadgeRow}>
+                          <View style={[styles.historyStatusPill, { backgroundColor: '#DCFCE7', borderColor: '#86EFAC' }]}>
+                            <CheckCircle2 size={12} color="#15803D" strokeWidth={2.6} />
+                            <Text style={[styles.historyStatusText, { color: '#15803D' }]}>Onaylandı</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.historyTitle}>{m.title}</Text>
+                        <View style={styles.historyMetaRow}>
+                          <User size={12} color="#64748B" />
+                          <Text style={styles.historyMetaText}>@{m.uploader.username}</Text>
+                        </View>
+                        <View style={styles.historyDateRow}>
+                          <Clock size={12} color="#D97706" />
+                          <Text style={styles.historyDateText}>Onay Zamanı: {formatActionDateTime(m.approvedAt)}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </CartoonCard>
+                ))
+              )
+            ) : activeAdminTab === 'deleted_memes' ? (
+              /* ================= SİLİNEN MEMELER GEÇMİŞİ ================= */
+              (!adminHistory?.deletedMemes || adminHistory.deletedMemes.length === 0) ? (
+                <CartoonCard
+                  borderRadius={20}
+                  shadowOffset={4}
+                  bgColor={CARTOON_COLORS.pastelYellow}
+                  style={styles.emptyStateWrapper}
+                  contentStyle={styles.emptyStateCard}
+                >
+                  <Text style={styles.emptyStateTitle}>Henüz Silinen Meme Kaydı Yok!</Text>
+                  <Text style={styles.emptyStateDesc}>Onaylanıp silinen memeler işlem tarihi ve gerekçesiyle burada listelenir.</Text>
+                </CartoonCard>
+              ) : (
+                adminHistory.deletedMemes.map((item) => (
+                  <CartoonCard
+                    key={item.id}
+                    borderRadius={20}
+                    shadowOffset={4}
+                    bgColor="#FFFFFF"
+                    style={styles.historyCardWrapper}
+                    contentStyle={styles.historyCardContent}
+                  >
+                    <View style={styles.historyRow}>
+                      {item.meme?.mediaUrl ? (
+                        <Image source={{ uri: item.meme.mediaUrl }} style={styles.historyThumb as any} />
+                      ) : (
+                        <View style={[styles.historyThumb, { backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' }]}>
+                          <Trash2 size={24} color="#DC2626" />
+                        </View>
+                      )}
+                      <View style={styles.historyInfo}>
+                        <View style={styles.historyBadgeRow}>
+                          <View style={[styles.historyStatusPill, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}>
+                            <Trash2 size={12} color="#B91C1C" strokeWidth={2.6} />
+                            <Text style={[styles.historyStatusText, { color: '#B91C1C' }]}>Silindi</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.historyTitle}>{item.meme?.title || 'Silinen Meme'}</Text>
+                        <View style={styles.historyReasonBox}>
+                          <Text style={styles.historyReasonLabel}>Neden: {item.reason}</Text>
+                        </View>
+                        {item.note ? (
+                          <Text style={styles.historyNoteText} numberOfLines={2}>Not: {item.note}</Text>
+                        ) : null}
+                        <View style={styles.historyMetaRow}>
+                          <User size={12} color="#64748B" />
+                          <Text style={styles.historyMetaText}>Talep Eden: @{item.user.username}</Text>
+                        </View>
+                        <View style={styles.historyDateRow}>
+                          <Clock size={12} color="#DC2626" />
+                          <Text style={styles.historyDateText}>Silinme Zamanı: {formatActionDateTime(item.updatedAt)}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </CartoonCard>
+                ))
+              )
+            ) : activeAdminTab === 'added_tags' ? (
+              /* ================= EKLENEN ETİKETLER GEÇMİŞİ ================= */
+              (!adminHistory?.addedTags || adminHistory.addedTags.length === 0) ? (
+                <CartoonCard
+                  borderRadius={20}
+                  shadowOffset={4}
+                  bgColor={CARTOON_COLORS.pastelYellow}
+                  style={styles.emptyStateWrapper}
+                  contentStyle={styles.emptyStateCard}
+                >
+                  <Text style={styles.emptyStateTitle}>Henüz Eklenen Etiket Kaydı Yok!</Text>
+                  <Text style={styles.emptyStateDesc}>Onaylanan etiket önerileri eklenme zamanıyla burada tutulur.</Text>
+                </CartoonCard>
+              ) : (
+                adminHistory.addedTags.map((item) => (
+                  <CartoonCard
+                    key={item.id}
+                    borderRadius={20}
+                    shadowOffset={4}
+                    bgColor="#FFFFFF"
+                    style={styles.historyCardWrapper}
+                    contentStyle={styles.historyCardContent}
+                  >
+                    <View style={styles.historyRow}>
+                      <Image source={{ uri: item.meme.mediaUrl }} style={styles.historyThumb as any} />
+                      <View style={styles.historyInfo}>
+                        <View style={styles.historyBadgeRow}>
+                          <View style={[styles.historyStatusPill, { backgroundColor: '#E0F2FE', borderColor: '#7DD3FC' }]}>
+                            <Tag size={12} color="#0284C7" strokeWidth={2.6} />
+                            <Text style={[styles.historyStatusText, { color: '#0284C7' }]}>Etiket Eklendi</Text>
+                          </View>
+                        </View>
+                        <View style={styles.tagHighlightRow}>
+                          <Text style={styles.tagHighlightText}>#{item.tagName}</Text>
+                        </View>
+                        <Text style={styles.historyTitle} numberOfLines={1}>{item.meme.title}</Text>
+                        <View style={styles.historyMetaRow}>
+                          <User size={12} color="#64748B" />
+                          <Text style={styles.historyMetaText}>Öneren: @{item.user.username}</Text>
+                        </View>
+                        <View style={styles.historyDateRow}>
+                          <Clock size={12} color="#0284C7" />
+                          <Text style={styles.historyDateText}>Eklenme Zamanı: {formatActionDateTime(item.updatedAt)}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </CartoonCard>
+                ))
+              )
+            ) : (
+                /* ================= RAPORLARIN GEÇMİŞİ ================= */
+                (!adminHistory?.reportsHistory || adminHistory.reportsHistory.length === 0) ? (
+                  <CartoonCard
+                    borderRadius={20}
+                    shadowOffset={4}
+                    bgColor={CARTOON_COLORS.pastelYellow}
+                    style={styles.emptyStateWrapper}
+                    contentStyle={styles.emptyStateCard}
+                  >
+                    <Text style={styles.emptyStateTitle}>Henüz Sonuçlanan Rapor Yok!</Text>
+                    <Text style={styles.emptyStateDesc}>Çözülen veya kapatılan şikayetler işlem zamanıyla burada listelenir.</Text>
+                  </CartoonCard>
+                ) : (
+                  adminHistory.reportsHistory.map((rep) => {
+                    const isResolved = rep.status === 'RESOLVED';
+                    return (
+                      <CartoonCard
+                        key={rep.id}
+                        borderRadius={20}
+                        shadowOffset={4}
+                        bgColor="#FFFFFF"
+                        style={styles.historyCardWrapper}
+                        contentStyle={styles.historyCardContent}
+                      >
+                        <View style={styles.historyRow}>
+                          <Image source={{ uri: rep.meme.mediaUrl }} style={styles.historyThumb as any} />
+                          <View style={styles.historyInfo}>
+                            <View style={styles.historyBadgeRow}>
+                              <View
+                                style={[
+                                  styles.historyStatusPill,
+                                  isResolved
+                                    ? { backgroundColor: '#DCFCE7', borderColor: '#86EFAC' }
+                                    : { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1' },
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.historyStatusText,
+                                    isResolved ? { color: '#15803D' } : { color: '#475569' },
+                                  ]}
+                                >
+                                  {isResolved ? 'Çözüldü ✅' : 'Geçersiz Sayıldı ✕'}
+                                </Text>
+                              </View>
+                            </View>
+                            <Text style={styles.historyTitle}>{rep.meme.title}</Text>
+                            <View style={[styles.historyReasonBox, { backgroundColor: '#FEF3C7', borderColor: '#FDE68A' }]}>
+                              <Text style={[styles.historyReasonLabel, { color: '#92400E' }]}>
+                                Şikayet: {rep.reason}
+                              </Text>
+                            </View>
+                            {rep.description ? (
+                              <Text style={styles.historyNoteText} numberOfLines={2}>Açıklama: {rep.description}</Text>
+                            ) : null}
+                            <View style={styles.historyMetaRow}>
+                              <User size={12} color="#64748B" />
+                              <Text style={styles.historyMetaText}>Raporlayan: @{rep.reporter.username}</Text>
+                            </View>
+                            <View style={styles.historyDateRow}>
+                              <Clock size={12} color="#64748B" />
+                              <Text style={styles.historyDateText}>İşlem Zamanı: {formatActionDateTime(rep.updatedAt)}</Text>
+                            </View>
+                          </View>
+                        </View>
+                      </CartoonCard>
+                    );
+                  })
+                )
+              )}
+          </View>
+        ) : (
+          /* Regular User Collection: Tags + Pinterest Masonry Grid */
+          <>
+            {orderedCollectionTags.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.memeTagsScroll}
+                contentContainerStyle={styles.memeTagsContainer}
               >
-                <Text style={styles.activeTagClearText}>
-                  Temizle ({selectedTags.length}) ✕
-                </Text>
-              </Pressable>
+                {selectedTags.length > 0 && (
+                  <Pressable
+                    onPress={() => setSelectedTags([])}
+                    style={styles.activeTagClearChip}
+                  >
+                    <Text style={styles.activeTagClearText}>
+                      Temizle ({selectedTags.length}) ✕
+                    </Text>
+                  </Pressable>
+                )}
+                {orderedCollectionTags.map((tag, idx) => {
+                  const isTagSelected = selectedTags.some(
+                    (t) => t.toLowerCase() === tag.toLowerCase()
+                  );
+                  return (
+                    <CartoonBadge
+                      key={`profile-tag-${tag}`}
+                      tag={tag}
+                      index={idx}
+                      selected={isTagSelected}
+                      onPress={() => handleToggleTagFilter(tag)}
+                    />
+                  );
+                })}
+              </ScrollView>
             )}
-            {orderedCollectionTags.map((tag, idx) => {
-              const isTagSelected = selectedTags.some(
-                (t) => t.toLowerCase() === tag.toLowerCase()
-              );
-              return (
-                <CartoonBadge
-                  key={`profile-tag-${tag}`}
-                  tag={tag}
-                  index={idx}
-                  selected={isTagSelected}
-                  onPress={() => handleToggleTagFilter(tag)}
-                />
-              );
-            })}
-          </ScrollView>
-        )}
 
-        {/* Pinterest Staggered 2-Column Masonry Grid (Exact match with ExploreScreen) */}
-        <View style={{ width: '100%', alignItems: 'center' }}>
-          {displayedMemes.length === 0 ? (
-            <CartoonCard
-              borderRadius={20}
-              shadowOffset={4}
-              bgColor={CARTOON_COLORS.pastelYellow}
-              style={styles.emptyStateWrapper}
-              contentStyle={styles.emptyStateCard}
-            >
-              <Text style={styles.emptyStateTitle}>
-                {activeCollectionTab === 'uploaded'
-                  ? 'Henüz eklediğin bir meme yok!'
-                  : activeCollectionTab === 'starred'
-                  ? 'Henüz yıldızladığın bir meme yok!'
-                  : 'Henüz kaydedilen bir meme yok!'}
-              </Text>
-              <Text style={styles.emptyStateDesc}>
-                {activeCollectionTab === 'uploaded'
-                  ? 'Hemen kendi meme’ini yükleyip koleksiyonunu başlatabilirsin.'
-                  : 'Keşfet veya Arama ekranından beğendiğin memeleri kaydedebilirsin.'}
-              </Text>
-              <CartoonButton
-                label={
-                  activeCollectionTab === 'uploaded'
-                    ? 'Yeni Meme Ekle'
-                    : 'Keşfet’e Göz At'
-                }
-                onPress={() =>
-                  activeCollectionTab === 'uploaded'
-                    ? onOpenAddMeme(selectedTags[0] || '')
-                    : onTabPress('explore')
-                }
-                bgColor={CARTOON_COLORS.green}
-                icon={<Plus size={16} color="#000000" strokeWidth={3} />}
-                borderRadius={16}
-                shadowSize={3}
-                style={{ alignSelf: 'center', marginTop: 10, marginBottom: 6 }}
-                faceStyle={{
-                  height: 40,
-                  paddingVertical: 0,
-                  paddingHorizontal: 16,
-                  borderWidth: 2.5,
-                }}
-              />
-            </CartoonCard>
-          ) : (
-            <View style={styles.masonryContainer}>
-              <View style={styles.masonryColumn}>
-                {leftColumn.map(renderMasonryPin)}
-              </View>
-              <View style={styles.masonryColumn}>
-                {rightColumn.map(renderMasonryPin)}
-              </View>
+            {/* Pinterest Staggered 2-Column Masonry Grid (Exact match with ExploreScreen) */}
+            <View style={{ width: '100%', alignItems: 'center' }}>
+              {displayedMemes.length === 0 ? (
+                <CartoonCard
+                  borderRadius={20}
+                  shadowOffset={4}
+                  bgColor={CARTOON_COLORS.pastelYellow}
+                  style={styles.emptyStateWrapper}
+                  contentStyle={styles.emptyStateCard}
+                >
+                  <Text style={styles.emptyStateTitle}>
+                    {activeCollectionTab === 'uploaded'
+                      ? 'Henüz eklediğin bir meme yok!'
+                      : activeCollectionTab === 'starred'
+                      ? 'Henüz yıldızladığın bir meme yok!'
+                      : 'Henüz kaydedilen bir meme yok!'}
+                  </Text>
+                  <Text style={styles.emptyStateDesc}>
+                    {activeCollectionTab === 'uploaded'
+                      ? 'Hemen kendi meme’ini yükleyip koleksiyonunu başlatabilirsin.'
+                      : 'Keşfet veya Arama ekranından beğendiğin memeleri kaydedebilirsin.'}
+                  </Text>
+                  <CartoonButton
+                    label={
+                      activeCollectionTab === 'uploaded'
+                        ? 'Yeni Meme Ekle'
+                        : 'Keşfet’e Göz At'
+                    }
+                    onPress={() =>
+                      activeCollectionTab === 'uploaded'
+                        ? onOpenAddMeme(selectedTags[0] || '')
+                        : onTabPress('explore')
+                    }
+                    bgColor={CARTOON_COLORS.green}
+                    icon={<Plus size={16} color="#000000" strokeWidth={3} />}
+                    borderRadius={16}
+                    shadowSize={3}
+                    style={{ alignSelf: 'center', marginTop: 10, marginBottom: 6 }}
+                    faceStyle={{
+                      height: 40,
+                      paddingVertical: 0,
+                      paddingHorizontal: 16,
+                      borderWidth: 2.5,
+                    }}
+                  />
+                </CartoonCard>
+              ) : (
+                <View style={styles.masonryContainer}>
+                  <View style={styles.masonryColumn}>
+                    {leftColumn.map(renderMasonryPin)}
+                  </View>
+                  <View style={styles.masonryColumn}>
+                    {rightColumn.map(renderMasonryPin)}
+                  </View>
+                </View>
+              )}
             </View>
-          )}
-        </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Settings (Gear Icon) Modal: Password Change, Account, Notifications */}
@@ -1195,10 +1666,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   label="Hesaptan Çıkış Yap"
                   onPress={() => {
                     setSettingsModalVisible(false);
-                    Alert.alert(
-                      'Çıkış Yapıldı 👋',
-                      'Oturumunuz güvenli bir şekilde kapatıldı.'
-                    );
+                    if (onLogout) {
+                      onLogout();
+                    } else {
+                      Alert.alert(
+                        'Çıkış Yapıldı 👋',
+                        'Oturumunuz güvenli bir şekilde kapatıldı.'
+                      );
+                    }
                   }}
                   bgColor={CARTOON_COLORS.pastelPink}
                   icon={<LogOut size={16} color="#000000" strokeWidth={2.8} />}
@@ -1968,12 +2443,156 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </KeyboardAvoidingView>
       </Modal>
 
-      <BottomNavBar activeTab="profile" onTabPress={onTabPress} />
+      <BottomNavBar activeTab="profile" onTabPress={onTabPress} isAdmin={isAdmin} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  adminRolePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#000000',
+  },
+  adminRolePillText: {
+    ...CARTOON_FONTS.bold,
+    fontSize: 10,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  adminHistoryContainer: {
+    width: '100%',
+    maxWidth: 366,
+    gap: 10,
+    marginTop: 10,
+    paddingBottom: 20,
+  },
+  adminHistoryLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 2.5,
+    borderColor: '#000000',
+  },
+  adminHistoryLoadingText: {
+    ...CARTOON_FONTS.semiBold,
+    fontSize: 14,
+    color: '#475569',
+    marginTop: 10,
+  },
+  historyCardWrapper: {
+    width: '100%',
+    marginBottom: 4,
+  },
+  historyCardContent: {
+    padding: 12,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  historyThumb: {
+    width: 82,
+    height: 82,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#000000',
+    backgroundColor: '#E2E8F0',
+  },
+  historyInfo: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  historyBadgeRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  historyStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 8,
+    borderWidth: 1.5,
+  },
+  historyStatusText: {
+    ...CARTOON_FONTS.bold,
+    fontSize: 11,
+  },
+  historyTitle: {
+    ...CARTOON_FONTS.bold,
+    fontSize: 14,
+    color: '#000000',
+    lineHeight: 18,
+  },
+  historyReasonBox: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    alignSelf: 'flex-start',
+    marginVertical: 3,
+  },
+  historyReasonLabel: {
+    ...CARTOON_FONTS.bold,
+    fontSize: 11,
+    color: '#B91C1C',
+  },
+  historyNoteText: {
+    ...CARTOON_FONTS.semiBold,
+    fontSize: 11,
+    color: '#475569',
+    marginVertical: 2,
+    lineHeight: 14,
+  },
+  historyMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
+  historyMetaText: {
+    ...CARTOON_FONTS.semiBold,
+    fontSize: 11,
+    color: '#64748B',
+  },
+  historyDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  historyDateText: {
+    ...CARTOON_FONTS.bold,
+    fontSize: 11,
+    color: '#1E293B',
+  },
+  tagHighlightRow: {
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#7DD3FC',
+    alignSelf: 'flex-start',
+    marginVertical: 2,
+  },
+  tagHighlightText: {
+    ...CARTOON_FONTS.bold,
+    fontSize: 13,
+    color: '#0284C7',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#0F172A',
@@ -2167,21 +2786,26 @@ const styles = StyleSheet.create({
   },
   profileAddMemeBtn: {
     flex: 1,
+    alignSelf: 'stretch',
     marginBottom: 4,
   },
   profileEditBtn: {
     flex: 1,
+    alignSelf: 'stretch',
     marginBottom: 4,
   },
   profileActionFace: {
     width: '100%',
-    minHeight: 42,
-    paddingVertical: 9,
-    paddingHorizontal: 16,
+    height: 42,
+    paddingVertical: 0,
+    paddingHorizontal: 8,
     borderWidth: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileActionBtnText: {
-    fontSize: 13.5,
+    fontSize: 13,
+    textAlign: 'center',
   },
   collectionTabsRow: {
     width: '100%',

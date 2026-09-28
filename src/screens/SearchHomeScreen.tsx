@@ -22,6 +22,7 @@ import {
 interface SearchHomeScreenProps {
   onSearch: (query: string) => void;
   onTabPress: (tab: TabType) => void;
+  isAdmin?: boolean;
 }
 
 const POPULAR_TAGS = ['hamster', 'yazılımcı', 'kedi', 'doge', 'sınav', 'pazartesi'];
@@ -30,6 +31,7 @@ const BG_SOURCE = require('../../assets/images/rainbow_hamsters.jpg');
 export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
   onSearch,
   onTabPress,
+  isAdmin = false,
 }) => {
   const [query, setQuery] = useState('');
   const insets = useSafeAreaInsets();
@@ -121,7 +123,7 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
           </ScrollView>
 
           {/* Cartoon 3D Bottom Navigation Bar */}
-          <BottomNavBar activeTab="search" onTabPress={onTabPress} />
+          <BottomNavBar activeTab="search" onTabPress={onTabPress} isAdmin={isAdmin} />
         </View>
       </ImageBackground>
     </View>

@@ -53,6 +53,7 @@ interface SearchResultsScreenProps {
   onTabPress: (tab: TabType) => void;
   savedMemeIds?: string[];
   onToggleSaveMeme?: (memeId: string) => void;
+  isAdmin?: boolean;
 }
 
 const USERNAME_STROKE_OFFSETS = [
@@ -78,6 +79,7 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
   onTabPress,
   savedMemeIds = [],
   onToggleSaveMeme,
+  isAdmin = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -1102,7 +1104,7 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
       </Modal>
 
       {/* Cartoon 3D Bottom Navigation Bar */}
-      <BottomNavBar activeTab="search" onTabPress={onTabPress} />
+      <BottomNavBar activeTab="search" onTabPress={onTabPress} isAdmin={isAdmin} />
     </View>
   );
 };

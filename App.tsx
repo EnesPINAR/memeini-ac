@@ -10,15 +10,24 @@ import { SearchResultsScreen } from './src/screens/SearchResultsScreen';
 import { AddMemeScreen } from './src/screens/AddMemeScreen';
 import { ExploreScreen } from './src/screens/ExploreScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { AuthScreen } from './src/screens/AuthScreen';
+import { AdminManagementScreen } from './src/screens/AdminManagementScreen';
 import { TabType } from './src/components/BottomNavBar';
 import { MemeItem } from './src/types/meme';
 import { MOCK_MEMES } from './src/data/mockMemes';
+import { authApi, getStoredToken, UserProfile } from './src/services/api';
 
-type CurrentScreen = 'search_home' | 'search_results' | 'add_meme' | 'explore' | 'profile';
+type CurrentScreen =
+  | 'search_home'
+  | 'search_results'
+  | 'add_meme'
+  | 'explore'
+  | 'profile'
+  | 'auth'
+  | 'admin_management';
 
 export default function App() {
   // Load static latin-ext (Turkish supported) Baloo 2 TTFs for iOS, Android, and Web
-  // Using exact PostScript names ensures 100% compatibility across Expo Go, iOS CoreText, and Android
   const [fontsLoaded, fontError] = useFonts({
     'Baloo2-SemiBold': require('./assets/fonts/Baloo2-SemiBold.ttf'),
     'Baloo2-Bold': require('./assets/fonts/Baloo2-Bold.ttf'),
@@ -70,12 +79,62 @@ export default function App() {
     preloadAssets();
   }, []);
 
+  // Auth & Session State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // App Navigation & Search State
   const [currentScreen, setCurrentScreen] = useState<CurrentScreen>('search_home');
-  const [previousScreen, setPreviousScreen] = useState<'search_home' | 'search_results' | 'explore' | 'profile'>('search_home');
+  const [previousScreen, setPreviousScreen] = useState<CurrentScreen>('search_home');
   const [searchQuery, setSearchQuery] = useState('Ornek arama');
   const [activeDefaultTag, setActiveDefaultTag] = useState('');
   const [userNickname, setUserNickname] = useState('enes');
   const [savedMemeIds, setSavedMemeIds] = useState<string[]>(['1', '3', '6', '10']);
+
+  // Initial Auth Check: load token and fetch user profile from live backend
+  useEffect(() => {
+    async function verifyAuth() {
+      try {
+        const token = await getStoredToken();
+        if (token) {
+          const profile = await authApi.getMe();
+          if (profile) {
+            setCurrentUser(profile);
+            setUserNickname(profile.username);
+          }
+        }
+      } catch {
+        // Token expired or invalid
+        setCurrentUser(null);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    }
+    verifyAuth();
+  }, []);
+
+  const handleAuthSuccess = (user: UserProfile) => {
+    setCurrentUser(user);
+    setUserNickname(user.username);
+    if (user.role === 'ADMIN') {
+      setCurrentScreen('admin_management');
+      Alert.alert('Yönetici Girişi Yapıldı 🛡️', `${user.displayName} olarak giriş yapıldı. Meme Yönetim Paneli açıldı.`);
+    } else {
+      setCurrentScreen('profile');
+      Alert.alert('Hoş Geldin! 🎉', `${user.displayName} olarak başarıyla giriş yapıldı.`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      setCurrentUser(null);
+      setUserNickname('');
+      setCurrentScreen('auth');
+      Alert.alert('Çıkış Yapıldı 👋', 'Hesabınızdan güvenli bir şekilde çıkış yapıldı.');
+    }
+  };
 
   const handleToggleSaveMeme = (memeId: string) => {
     setSavedMemeIds((prev) =>
@@ -91,6 +150,14 @@ export default function App() {
   };
 
   const handleOpenAddMeme = (tag?: string) => {
+    if (currentUser?.role === 'ADMIN') {
+      Alert.alert(
+        'Yönetici Hesabı 🛡️',
+        'Yönetici hesapları yeni meme ekleyemez. Meme yönetim ekranına yönlendiriliyorsunuz.'
+      );
+      setCurrentScreen('admin_management');
+      return;
+    }
     if (currentScreen !== 'add_meme') {
       setPreviousScreen(currentScreen);
     }
@@ -102,11 +169,32 @@ export default function App() {
     if (tab === 'search') {
       setCurrentScreen('search_home');
     } else if (tab === 'add') {
+      if (!currentUser) {
+        Alert.alert(
+          'Giriş Yapmalısınız 🔒',
+          'Yeni bir meme yüklemek için lütfen önce hesabınıza giriş yapın.',
+          [
+            { text: 'Vazgeç', style: 'cancel' },
+            { text: 'Giriş Yap', onPress: () => setCurrentScreen('auth') },
+          ]
+        );
+        return;
+      }
+      if (currentUser.role === 'ADMIN') {
+        setCurrentScreen('admin_management');
+        return;
+      }
       handleOpenAddMeme();
+    } else if (tab === 'admin_manage') {
+      setCurrentScreen('admin_management');
     } else if (tab === 'explore') {
       setCurrentScreen('explore');
     } else if (tab === 'profile') {
-      setCurrentScreen('profile');
+      if (!currentUser) {
+        setCurrentScreen('auth');
+      } else {
+        setCurrentScreen('profile');
+      }
     }
   };
 
@@ -116,11 +204,23 @@ export default function App() {
     setCurrentScreen('profile');
   };
 
-  if ((!fontsLoaded && !fontError) || !assetsLoaded) {
+  if ((!fontsLoaded && !fontError) || !assetsLoaded || isCheckingAuth) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FFE600" />
       </View>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <SafeAreaProvider>
+        <IOSContainer>
+          <View style={styles.container}>
+            <AuthScreen onAuthSuccess={handleAuthSuccess} />
+          </View>
+        </IOSContainer>
+      </SafeAreaProvider>
     );
   }
 
@@ -131,6 +231,12 @@ export default function App() {
           {currentScreen === 'search_home' ? (
             <SearchHomeScreen
               onSearch={handleStartSearch}
+              onTabPress={handleTabPress}
+              isAdmin={currentUser?.role === 'ADMIN'}
+            />
+          ) : currentScreen === 'admin_management' ? (
+            <AdminManagementScreen
+              onBackToHome={() => setCurrentScreen('search_home')}
               onTabPress={handleTabPress}
             />
           ) : currentScreen === 'add_meme' ? (
@@ -149,6 +255,7 @@ export default function App() {
               onTabPress={handleTabPress}
               savedMemeIds={savedMemeIds}
               onToggleSaveMeme={handleToggleSaveMeme}
+              isAdmin={currentUser?.role === 'ADMIN'}
             />
           ) : currentScreen === 'profile' ? (
             <ProfileScreen
@@ -160,6 +267,8 @@ export default function App() {
               onUpdateNickname={setUserNickname}
               savedMemeIds={savedMemeIds}
               onToggleSaveMeme={handleToggleSaveMeme}
+              onLogout={handleLogout}
+              currentUser={currentUser}
             />
           ) : (
             <SearchResultsScreen
@@ -169,6 +278,7 @@ export default function App() {
               onTabPress={handleTabPress}
               savedMemeIds={savedMemeIds}
               onToggleSaveMeme={handleToggleSaveMeme}
+              isAdmin={currentUser?.role === 'ADMIN'}
             />
           )}
         </View>

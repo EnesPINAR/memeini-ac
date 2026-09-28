@@ -52,6 +52,7 @@ interface ExploreScreenProps {
   onTabPress: (tab: TabType) => void;
   savedMemeIds?: string[];
   onToggleSaveMeme?: (memeId: string) => void;
+  isAdmin?: boolean;
 }
 
 interface SituationCategory {
@@ -118,6 +119,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
   onTabPress,
   savedMemeIds = [],
   onToggleSaveMeme,
+  isAdmin = false,
 }) => {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -1383,7 +1385,7 @@ export const ExploreScreen: React.FC<ExploreScreenProps> = ({
       </Modal>
 
       {/* Cartoon 3D Bottom Navigation Bar with activeTab="explore" */}
-      <BottomNavBar activeTab="explore" onTabPress={onTabPress} />
+      <BottomNavBar activeTab="explore" onTabPress={onTabPress} isAdmin={isAdmin} />
     </View>
   );
 };

@@ -6,6 +6,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    ".expo"
+    ".expo",
+    "backend"
   ]
 }

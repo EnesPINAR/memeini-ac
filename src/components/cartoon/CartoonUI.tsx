@@ -489,6 +489,7 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     paddingVertical: 8,
     paddingHorizontal: 16,
+    width: '100%',
   },
   btnText: {
     ...CARTOON_FONTS.extraBold,
